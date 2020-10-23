@@ -41,9 +41,9 @@ class Datastreams(db.Model):
             )
 
         def to_json(x):
-            return {"datastream id": x.id, "name": x.name, "description": x.description}
+            return {"datastream_id": x.id, "name": x.name, "description": x.description}
 
-        return {"DataStreams": list(map(lambda x: to_json(x), datastream_list))}
+        return {"Datastreams": list(map(lambda x: to_json(x), datastream_list))}
 
 
     #         @classmethod

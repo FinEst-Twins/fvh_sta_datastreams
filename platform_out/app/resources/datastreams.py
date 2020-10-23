@@ -14,7 +14,7 @@ class DataStream(Resource):
         """
         try:
             query_parameters = request.args
-            print(query_parameters)
+            #print(query_parameters)
             if query_parameters:
                 thing = None
                 sensor = None
@@ -22,7 +22,7 @@ class DataStream(Resource):
                     thing = request.args["thing"]
                 if "sensor" in query_parameters:
                     sensor = request.args["sensor"]
-                print(thing, sensor)
+                #print(thing, sensor)
                 datastreams = Datastreams.filter_by_thing_sensor(thing, sensor)
             else:
                 result = {"message": "no known query parameters"}

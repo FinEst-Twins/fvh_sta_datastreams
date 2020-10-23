@@ -1,9 +1,10 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+import logging
 import os
-import sys
-from flask import jsonify
+
+logging.basicConfig(level=logging.INFO)
 
 db = SQLAlchemy()
 
@@ -32,7 +33,7 @@ def create_app(script_info=None):
 
     @app.route("/")
     def hello_world():
-        return jsonify(hello="world")
+        return jsonify(health="ok")
 
     return app
 
