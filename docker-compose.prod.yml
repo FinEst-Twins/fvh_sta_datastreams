@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+
+  platform_outgoing_api:
+    build: 
+        context: ./platform_out/
+        dockerfile: Dockerfile.prod
+    entrypoint: ['/project/entrypoint.sh']
+    command: gunicorn --bind 0.0.0.0:5000 manage:app
+    volumes:
+      - ./platform_out/:/project/
+    expose:
+      - 5000
+    env_file: 
+      - variables.env
+    environment:
+      - FLASK_APP=app/__init__.py
+      - FLASK_ENV=development
+      - APP_SETTINGS=app.config.DevelopmentConfig 
+      
+  nginx:
+    build: ./nginx
+    ports:
+      - 1338:80
+    depends_on:
+      - platform_outgoing_api
