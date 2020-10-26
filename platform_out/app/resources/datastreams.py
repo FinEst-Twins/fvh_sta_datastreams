@@ -1,6 +1,9 @@
 from flask import jsonify, request, Blueprint, current_app
 from flask_restful import Resource, Api
 from app.models import Datastreams
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 datastreams_blueprint = Blueprint("datastream", __name__)
 api = Api(datastreams_blueprint)
@@ -31,7 +34,7 @@ class DataStream(Resource):
                 return response
 
         except Exception as e:
-            print(e)
+            logging.warning(e)
             result = {"message": "error"}
             response = jsonify(result)
             response.status_code = 400
