@@ -26,10 +26,11 @@ class Datastreams(db.Model):
     @classmethod
     def filter_by_thing_sensor(cls, thing, sensor):
 
-        if not thing:
+        datastream_list = []
+        if (not thing) and sensor:
             datastream_list = Datastreams.query.filter(Datastreams.sensor_link == sensor)
 
-        elif not sensor:
+        elif (not sensor) and thing:
             datastream_list = Datastreams.query.filter(Datastreams.thing_link == thing)
 
         else:
@@ -46,28 +47,6 @@ class Datastreams(db.Model):
         return {"Datastreams": list(map(lambda x: to_json(x), datastream_list))}
 
 
-    #         @classmethod
-    # def filter_by_thing(cls, mintime, maxtime):
-
-    #     if not mintime:
-    #         obs_list = Observations.query.filter(Observations.resulttime <= maxtime)
-
-    #     elif not maxtime:
-    #         obs_list = Observations.query.filter(Observations.resulttime >= mintime)
-
-    #     else:
-    #         obs_list = Observations.query.filter(
-    #             and_(
-    #                 Observations.resulttime <= maxtime,
-    #                 Observations.resulttime >= mintime,
-    #             )
-    #         )
-
-    #     def to_json(x):
-    #         return {"result": x.result, "result time": x.resulttime}
-
-    #     return {"Observations": list(map(lambda x: to_json(x), obs_list))}
-
     @classmethod
     def return_all(cls):
         def to_json(x):
@@ -78,22 +57,22 @@ class Datastreams(db.Model):
         }
 
 
-class AssetData(db.Model):
-    __tablename__ = "asset_data_hstore"
-    id = db.Column(db.Integer, primary_key=True)
-    asset_name = db.Column(db.String(64), index=True, unique=True)
-    asset_data = db.Column(MutableDict.as_mutable(HSTORE))
+# class AssetData(db.Model):
+#     __tablename__ = "asset_data_hstore"
+#     id = db.Column(db.Integer, primary_key=True)
+#     asset_name = db.Column(db.String(64), index=True, unique=True)
+#     asset_data = db.Column(MutableDict.as_mutable(HSTORE))
 
-    # def __init__(self, asset_name, asset_data):
-    #     self.asset_data = asset_data
-    #     self.asset_name = asset_name
+#     # def __init__(self, asset_name, asset_data):
+#     #     self.asset_data = asset_data
+#     #     self.asset_name = asset_name
 
-    def __repr__(self):
-        return f"<Data Stream {self.asset_name}, {self.asset_data}>"
+#     def __repr__(self):
+#         return f"<Data Stream {self.asset_name}, {self.asset_data}>"
 
-    @classmethod
-    def return_all(cls):
-        def to_json(x):
-            return {"asset name": x.asset_name, "asset data": x.asset_data}
+#     @classmethod
+#     def return_all(cls):
+#         def to_json(x):
+#             return {"asset name": x.asset_name, "asset data": x.asset_data}
 
-        return {"DataStreams": list(map(lambda x: to_json(x), AssetData.query.all()))}
+#         return {"DataStreams": list(map(lambda x: to_json(x), AssetData.query.all()))}
