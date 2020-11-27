@@ -33,5 +33,6 @@ USER appuser
 # RUN pip install flake8
 # COPY . .
 # RUN flake8 --ignore=E501,F401 .
+CMD gunicorn --bind 0.0.0.0:5000 manage:app
 
 
