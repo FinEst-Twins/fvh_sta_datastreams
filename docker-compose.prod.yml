@@ -11,7 +11,7 @@ services:
     expose:
       - 5000
     env_file:
-      - variables.env
+      - config.env
     environment:
       - FLASK_APP=app/__init__.py
       - FLASK_ENV=development
