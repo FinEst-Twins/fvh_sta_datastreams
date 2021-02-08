@@ -50,5 +50,4 @@ class DataStream(Resource):
             response.status_code = 200
             return response
 
-
 api.add_resource(DataStream, "/datastream")
