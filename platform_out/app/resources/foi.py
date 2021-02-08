@@ -56,7 +56,7 @@ class FoIList(Resource):
             response.status_code = 200
             return response
         else:
-            result = {"message": "No Feature Of Interest with given Id found"}
+            result = {"message": "No Features Of Interest found"}
             response = jsonify(result)
             response.status_code = 200
             return response

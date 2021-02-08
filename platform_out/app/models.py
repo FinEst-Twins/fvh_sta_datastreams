@@ -23,6 +23,25 @@ class Datastreams(db.Model):
     def __repr__(self):
         return f"<Observation {self.name}, {self.description}>"
 
+    def to_json(x):
+        return {"datastream_id": x.id, "name": x.name, "description": x.description, "thing_link": x.thing_link, "sensor_link": x.sensor_link}
+
+    @classmethod
+    def filter_by_id(cls, id):
+
+        FoI_list = []
+        if (id):
+            FoI_list = Datastreams.query.filter(
+                    Datastreams.id == id
+            )
+
+        if FoI_list.count() == 0:
+           result = None
+        else:
+            result = {f"Datastream {id}": Datastreams.to_json(FoI_list[0])}
+
+        return result
+
     @classmethod
     def filter_by_thing_sensor(cls, thing, sensor):
 
@@ -34,26 +53,18 @@ class Datastreams(db.Model):
             datastream_list = Datastreams.query.filter(Datastreams.thing_link == thing)
 
         else:
-            datastream_list = Datastreams.query.filter(
-                and_(
+            datastream_list = Datastreams.query.filter(and_(
                     Datastreams.thing_link == thing,
                     Datastreams.sensor_link == sensor,
-                )
-            )
+                ))
 
-        def to_json(x):
-            return {"datastream_id": x.id, "name": x.name, "description": x.description}
-
-        return {"Datastreams": list(map(lambda x: to_json(x), datastream_list))}
+        return {"Datastreams": list(map(lambda x: Datastreams.to_json(x), datastream_list))}
 
 
     @classmethod
     def return_all(cls):
-        def to_json(x):
-            return {"datastream id": x.id, "name": x.name, "description": x.description}
-
         return {
-            "Observations": list(map(lambda x: to_json(x), Datastreams.query.all()))
+            "Observations": list(map(lambda x: Datastreams.to_json(x), Datastreams.query.all()))
         }
 
 
