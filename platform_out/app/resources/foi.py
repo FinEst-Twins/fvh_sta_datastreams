@@ -33,7 +33,7 @@ class FoI(Resource):
             response.status_code = 200
             return response
 
-api.add_resource(FoI, "/v1.0/FeaturesOfInterest/<int:foi_id>")
+api.add_resource(FoI, "/OGCSensorThings/v1.0/FeaturesOfInterest/<int:foi_id>")
 
 
 class FoIList(Resource):
@@ -61,4 +61,4 @@ class FoIList(Resource):
             response.status_code = 200
             return response
 
-api.add_resource(FoIList, "/v1.0/FeaturesOfInterest")
+api.add_resource(FoIList, "/OGCSensorThings/v1.0/FeaturesOfInterest")

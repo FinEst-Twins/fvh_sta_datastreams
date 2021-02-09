@@ -72,12 +72,12 @@ class DSbyID(Resource):
             response.status_code = 200
             return response
         else:
-            result = {"message": "No Feature Of Interest with given Id found"}
+            result = {"message": "No Datastream with given Id found"}
             response = jsonify(result)
             response.status_code = 200
             return response
 
-api.add_resource(DSbyID, "/v1.0/Datastreams/<int:ds_id>")
+api.add_resource(DSbyID, "/OGCSensorThings/v1.0/Datastreams/<int:ds_id>")
 
 
 class DSList(Resource):
@@ -105,4 +105,4 @@ class DSList(Resource):
             response.status_code = 200
             return response
 
-api.add_resource(DSList, "/v1.0/Datastreams")
+api.add_resource(DSList, "/OGCSensorThings/v1.0/Datastreams")
