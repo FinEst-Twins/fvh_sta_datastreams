@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_
 from sqlalchemy.dialects.postgresql import HSTORE, JSON
 from sqlalchemy.ext.mutable import MutableDict
+import json
 
 class Datastreams(db.Model):
     __tablename__ = "datastream"
@@ -81,7 +82,9 @@ class FeaturesofInterest(db.Model):
 
     @classmethod
     def to_json(cls, x):
-        return { "name": x.name, "description": x.description, "encodingtype": x.encodingtype, "feature": x.feature }
+        result = { "name": x.name, "description": x.description, "encodingtype": x.encodingtype, "feature": x.feature }
+        result["feature"] = json.loads(result["feature"])
+        return result
 
     @classmethod
     def return_all(cls):
