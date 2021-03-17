@@ -65,7 +65,7 @@ class Datastreams(db.Model):
     @classmethod
     def return_all(cls):
         return {
-            "Observations": list(map(lambda x: Datastreams.to_json(x), Datastreams.query.all()))
+            "Datastreams": list(map(lambda x: Datastreams.to_json(x), Datastreams.query.all()))
         }
 
 
