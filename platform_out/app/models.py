@@ -25,7 +25,7 @@ class Datastreams(db.Model):
         return f"<Observation {self.name}, {self.description}>"
 
     def to_json(x):
-        return {"datastream_id": x.id, "name": x.name, "description": x.description, "thing_link": x.thing_link, "sensor_link": x.sensor_link}
+        return {"datastream_id": x.id, "name": x.name, "description": x.description, "Unit Of Measurement":x.unitofmeasurement, "thing_link": x.thing_link, "sensor_link": x.sensor_link}
 
     @classmethod
     def filter_by_id(cls, id):
