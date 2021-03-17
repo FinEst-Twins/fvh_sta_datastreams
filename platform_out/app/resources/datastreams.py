@@ -1,6 +1,6 @@
-from flask import jsonify, request, Blueprint, current_app
+from flask import jsonify, request, Blueprint
 from flask_restful import Resource, Api
-from app.models import Datastreams
+from app.models.datastreams import Datastreams
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +17,7 @@ class DataStream(Resource):
         """
         try:
             query_parameters = request.args
-            #print(query_parameters)
+            # print(query_parameters)
             if query_parameters:
                 thing = None
                 sensor = None
@@ -25,7 +25,7 @@ class DataStream(Resource):
                     thing = request.args["thing"]
                 if "sensor" in query_parameters:
                     sensor = request.args["sensor"]
-                #print(thing, sensor)
+                # print(thing, sensor)
                 datastreams = Datastreams.filter_by_thing_sensor(thing, sensor)
             else:
                 result = {"message": "no known query parameters"}
@@ -50,7 +50,9 @@ class DataStream(Resource):
             response.status_code = 200
             return response
 
+
 api.add_resource(DataStream, "/datastream")
+
 
 class DSbyID(Resource):
     def get(self, ds_id):
@@ -76,6 +78,7 @@ class DSbyID(Resource):
             response = jsonify(result)
             response.status_code = 200
             return response
+
 
 api.add_resource(DSbyID, "/OGCSensorThings/v1.0/Datastreams/<int:ds_id>")
 
@@ -104,5 +107,6 @@ class DSList(Resource):
             response = jsonify(result)
             response.status_code = 200
             return response
+
 
 api.add_resource(DSList, "/OGCSensorThings/v1.0/Datastreams")

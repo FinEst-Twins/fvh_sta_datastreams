@@ -1,12 +1,13 @@
-from flask import jsonify, request, Blueprint, current_app
+from flask import jsonify, Blueprint
 from flask_restful import Resource, Api
-from app.models import FeaturesofInterest
+from app.models.foi import FeaturesofInterest
 import logging
 
 logging.basicConfig(level=logging.INFO)
 
 foi_blueprint = Blueprint("featuresofinterest", __name__)
 api = Api(foi_blueprint)
+
 
 class FoI(Resource):
     def get(self, foi_id):
@@ -32,6 +33,7 @@ class FoI(Resource):
             response = jsonify(result)
             response.status_code = 200
             return response
+
 
 api.add_resource(FoI, "/OGCSensorThings/v1.0/FeaturesOfInterest/<int:foi_id>")
 
@@ -60,5 +62,6 @@ class FoIList(Resource):
             response = jsonify(result)
             response.status_code = 200
             return response
+
 
 api.add_resource(FoIList, "/OGCSensorThings/v1.0/FeaturesOfInterest")
