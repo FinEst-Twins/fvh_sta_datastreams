@@ -26,7 +26,7 @@ class Datastreams(db.Model):
             "datastream_id": x.id,
             "name": x.name,
             "description": x.description,
-            "Unit Of Measurement": x.unitofmeasurement,
+            "unit_of_measurement": x.unitofmeasurement,
             "thing_link": x.thing_link,
             "sensor_link": x.sensor_link,
         }
