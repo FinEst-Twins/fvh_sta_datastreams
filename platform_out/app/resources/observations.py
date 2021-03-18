@@ -47,7 +47,14 @@ class ObservationbyDSId(Resource):
         #TODO pagination
         """
         try:
-            obs = Observations.filter_by_datastream_id(id)
+            query_parameters = request.args
+
+            top = int(query_parameters["$top"]) if "$top" in query_parameters else 100
+            if (top>500): top=500
+
+            skip = int(query_parameters["$skip"]) if "$skip" in query_parameters else 100
+
+            obs = Observations.filter_by_datastream_id(id, top, skip)
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}
@@ -60,7 +67,7 @@ class ObservationbyDSId(Resource):
             response.status_code = 200
             return response
         else:
-            result = {"message": "No Observation with given Id found"}
+            result = {"message": "No Observation found for given datastream"}
             response = jsonify(result)
             response.status_code = 200
             return response

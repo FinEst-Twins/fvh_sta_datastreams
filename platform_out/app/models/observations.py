@@ -53,20 +53,18 @@ class Observations(db.Model):
 
 
     @classmethod
-    def filter_by_datastream_id(cls, id):
+    def filter_by_datastream_id(cls, id, top, skip):
 
-        obs_list = []
-        if id:
-            obs_list = Observations.query.filter(Observations.datastream_id == id)
-
-        if obs_list.count() == 0:
-            result = None
-        else:
-            result =  {
-            "Datastreams": list(map(lambda x: Observations.to_json(x), obs_list))
+        count = Observations.query.filter(Observations.datastream_id == id).count()
+        obs_list ={
+                "@iot.count": count,
+                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams({id})Observations?$top={top}&$skip={skip+100}",
+            "value": list(
+                map(lambda x: Observations.to_json(x), Observations.query.filter(Observations.datastream_id == id).limit(top).offset(skip).all())
+            )
         }
 
-        return result
+        return obs_list
 
 
     @classmethod
