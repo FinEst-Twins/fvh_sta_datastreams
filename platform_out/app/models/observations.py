@@ -1,4 +1,5 @@
 from app import db
+from flask import current_app
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -26,13 +27,14 @@ class Observations(db.Model):
 
     def to_json(x):
         return {
-            "id": x.id,
-            "phenomenontime_begin": x.phenomenontime_begin,
-            "phenomenontime_end": x.phenomenontime_end,
-            "resulttime": x.resulttime,
+            "@iot.id": x.id,
+            "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})",
+            "phenomenonTimeBegin": x.phenomenontime_begin,
+            "phenomenonTimeEnd": x.phenomenontime_end,
+            "resultTime": x.resulttime,
             "result": x.result,
-            "datastream_id": x.datastream_id,
-            "featureofinterest_id": x.featureofinterest_id,
+            "Datastream@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/Datastream" ,
+            "FeatureOfInterest@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/FeatureOfInterest",
         }
 
     @classmethod
@@ -45,6 +47,37 @@ class Observations(db.Model):
         if obs_list.count() == 0:
             result = None
         else:
-            result = {f"Observation_{id}": Observations.to_json(obs_list[0])}
+            result = Observations.to_json(obs_list[0])
 
         return result
+
+
+    @classmethod
+    def filter_by_datastream_id(cls, id):
+
+        obs_list = []
+        if id:
+            obs_list = Observations.query.filter(Observations.datastream_id == id)
+
+        if obs_list.count() == 0:
+            result = None
+        else:
+            result =  {
+            "Datastreams": list(map(lambda x: Observations.to_json(x), obs_list))
+        }
+
+        return result
+
+
+    @classmethod
+    def return_page(cls, top, skip):
+        count = Observations.query.count()
+        obs_list ={
+                "@iot.count": count,
+                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations?$top={top}&$skip={skip+100}",
+            "value": list(
+                map(lambda x: Observations.to_json(x), Observations.query.limit(top).offset(skip).all())
+            )
+        }
+        return obs_list
+

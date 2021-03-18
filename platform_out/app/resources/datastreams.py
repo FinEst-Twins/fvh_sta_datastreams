@@ -79,7 +79,7 @@ class DSbyID(Resource):
             response.status_code = 200
             return response
 
-
+#api.add_resource(DSbyID, "/OGCSensorThings/v1.0/Datastreams(<int:ds_id>)")
 api.add_resource(DSbyID, "/OGCSensorThings/v1.0/Datastreams/<int:ds_id>")
 
 

@@ -7,6 +7,7 @@ logging.basicConfig(level=logging.INFO)
 
 db = SQLAlchemy()
 
+url = "localhost:1338/OGCSensorThings/v1.0/"
 
 def create_app(script_info=None):
 

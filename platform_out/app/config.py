@@ -18,6 +18,7 @@ class Config(object):
     CSRF_ENABLED = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
+    HOSTED_URL = get_env_variable("BASE_URL")
 
 
 class ProductionConfig(Config):

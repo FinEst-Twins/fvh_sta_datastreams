@@ -34,7 +34,7 @@ class FoI(Resource):
             response.status_code = 200
             return response
 
-
+#api.add_resource(DSbyID, "/OGCSensorThings/v1.0/FeaturesOfInterest(<int:foi_id>)")
 api.add_resource(FoI, "/OGCSensorThings/v1.0/FeaturesOfInterest/<int:foi_id>")
 
 
