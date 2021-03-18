@@ -41,7 +41,7 @@ class Datastreams(db.Model):
         if FoI_list.count() == 0:
             result = None
         else:
-            result = {f"Datastream {id}": Datastreams.to_json(FoI_list[0])}
+            result = {f"Datastream_{id}": Datastreams.to_json(FoI_list[0])}
 
         return result
 

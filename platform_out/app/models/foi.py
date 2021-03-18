@@ -12,7 +12,7 @@ class FeaturesofInterest(db.Model):
     feature = db.Column(db.String())
 
     def __repr__(self):
-        return f"<Feature Of Interest {self.name}, {self.description}, {self.encodingtype}, {self.feature}>"
+        return f"<Feature_Of_Interest {self.name}, {self.description}, {self.encodingtype}, {self.feature}>"
 
     @classmethod
     def to_json(cls, x):
@@ -28,7 +28,7 @@ class FeaturesofInterest(db.Model):
     @classmethod
     def return_all(cls):
         return {
-            "Features Of Interest": list(
+            "Features_Of_Interest": list(
                 map(
                     lambda x: FeaturesofInterest.to_json(x),
                     FeaturesofInterest.query.all(),
@@ -47,7 +47,7 @@ class FeaturesofInterest(db.Model):
             result = None
         else:
             result = {
-                f"Feature Of Interest {id}": FeaturesofInterest.to_json(FoI_list[0])
+                f"Feature_Of_Interest_{id}": FeaturesofInterest.to_json(FoI_list[0])
             }
 
         return result
