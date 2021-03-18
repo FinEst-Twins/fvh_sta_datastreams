@@ -28,6 +28,9 @@ def create_app(script_info=None):
     from app.resources.foi import foi_blueprint
     app.register_blueprint(foi_blueprint)
 
+    from app.resources.observations import observations_blueprint
+    app.register_blueprint(observations_blueprint)
+
     # shell context for flask cli
     @app.shell_context_processor
     def ctx():
