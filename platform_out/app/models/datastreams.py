@@ -18,9 +18,6 @@ class Datastreams(db.Model):
     thing_link = db.Column(db.String())
     observedproperty_link = db.Column(db.String())
 
-    def __repr__(self):
-        return f"<Observation {self.name}, {self.description}>"
-
     def to_json(x):
         return {
             "datastream_id": x.id,

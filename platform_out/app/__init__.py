@@ -3,11 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 import logging
 import os
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 db = SQLAlchemy()
 
-url = "localhost:1338/OGCSensorThings/v1.0/"
+
 
 def create_app(script_info=None):
 

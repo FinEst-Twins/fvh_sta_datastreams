@@ -50,9 +50,12 @@ class ObservationbyDSId(Resource):
             query_parameters = request.args
 
             top = int(query_parameters["$top"]) if "$top" in query_parameters else 100
-            if (top>500): top=500
+            if top > 500:
+                top = 500
 
-            skip = int(query_parameters["$skip"]) if "$skip" in query_parameters else 100
+            skip = (
+                int(query_parameters["$skip"]) if "$skip" in query_parameters else 100
+            )
 
             obs = Observations.filter_by_datastream_id(id, top, skip)
         except Exception as e:
@@ -88,11 +91,27 @@ class ObservationsList(Resource):
             query_parameters = request.args
 
             top = int(query_parameters["$top"]) if "$top" in query_parameters else 100
-            if (top>500): top=500
+            if top > 500:
+                top = 500
 
-            skip = int(query_parameters["$skip"]) if "$skip" in query_parameters else 100
+            skip = int(query_parameters["$skip"]) if "$skip" in query_parameters else 0
 
-            obs_list = Observations.return_page(top, skip)
+            expand_code = 0
+            if "$expand" in query_parameters:
+                expand_type_list = query_parameters["$expand"].lower().split(",")
+
+                if len(expand_type_list) == 0:
+                    expand_code = -1
+                if "datastream" in expand_type_list:
+                    expand_code += 1
+                    expand_type_list.remove("datastream")
+                if "featureofinterest" in expand_type_list:
+                    expand_code += 2
+                    expand_type_list.remove("featureofinterest")
+                if len(expand_type_list) != 0:
+                    expand_code = -1
+
+            obs_list = Observations.return_page_with_expand(top, skip, expand_code)
 
         except Exception as e:
             logging.warning(e)
