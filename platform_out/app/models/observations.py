@@ -5,6 +5,7 @@ from enum import Enum
 from app.models.datastreams import Datastreams
 from app.models.foi import FeaturesofInterest
 import json
+import datetime
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -41,9 +42,9 @@ class Observations(db.Model):
         return {
             "@iot.id": x.id,
             "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})",
-            "phenomenonTimeBegin": x.phenomenontime_begin,
-            "phenomenonTimeEnd": x.phenomenontime_end,
-            "resultTime": x.resulttime,
+            "phenomenonTimeBegin": x.phenomenontime_begin.strftime("%d-%m-%YT%H:%M:%SZ") if x.phenomenontime_begin else None,
+            "phenomenonTimeEnd": x.phenomenontime_end.strftime("%d-%m-%YT%H:%M:%SZ") if x.phenomenontime_end else None,
+            "resultTime": x.resulttime.strftime("%d-%m-%YT%H:%M:%SZ") if x.resulttime else None,
             "result": x.result,
             "Datastream@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/Datastream",
             "FeatureOfInterest@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/FeatureOfInterest",
