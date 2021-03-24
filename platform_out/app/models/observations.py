@@ -50,6 +50,25 @@ class Observations(db.Model):
         }
 
     @classmethod
+    def to_selected_json(cls, x, selectparams):
+        datadict = Observations.to_json(x)
+
+        key_dict = {
+            "datastream": "Datastream@iot.navigationLink",
+            "featureofinterest": "FeatureOfInterest@iot.navigationLink",
+            "phenomenontimebegin": "phenomenonTimeBegin",
+            "phenomenontimeend": "phenomenonTimeEnd",
+            "result": "result",
+            "resulttime": "resultTime",
+        }
+
+        new_result = {}
+        for key in selectparams:
+            new_result[key] = datadict[key_dict[key]]
+
+        return new_result
+
+    @classmethod
     def to_expanded_datastream_json(cls, data_dict, x):
         del data_dict["Datastream@iot.navigationLink"]
         data_dict["Datastream"] = {
@@ -94,6 +113,7 @@ class Observations(db.Model):
 
     @classmethod
     def get_nextlink_queryparams(cls, top, skip, expand_code):
+        # TODO see if skip overreaches limit
 
         query_params = []
         if top:
@@ -199,7 +219,7 @@ class Observations(db.Model):
         return query
 
     @classmethod
-    def filter_by_id(cls, id):
+    def filter_by_id(cls, id, selects):
 
         obs_list = []
         if id:
@@ -207,6 +227,8 @@ class Observations(db.Model):
 
         if obs_list.count() == 0:
             result = None
+        elif selects:
+            result = Observations.to_selected_json(obs_list[0], selects)
         else:
             result = Observations.to_json(obs_list[0])
 
@@ -216,7 +238,9 @@ class Observations(db.Model):
     def filter_by_datastream_id(cls, id, top, skip, expand_code):
 
         count = Observations.query.filter(Observations.datastream_id == id).count()
-        if expand_code != -1:
+        if count == 0:
+            obs_list = {"@iot.count": count}
+        elif expand_code != -1:
             obs_list = {
                 "@iot.count": count,
                 "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams({id})/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code)}",
@@ -239,7 +263,9 @@ class Observations(db.Model):
     @classmethod
     def return_page_with_expand(cls, top, skip, expand_code):
         count = Observations.query.count()
-        if expand_code != -1:
+        if count == 0:
+            obs_list = {"@iot.count": count}
+        elif expand_code != -1:
             obs_list = {
                 "@iot.count": count,
                 "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code)}",

@@ -11,37 +11,58 @@ observations_blueprint = Blueprint("observations", __name__)
 api = Api(observations_blueprint)
 
 
-def parse_args(args):
+def parse_args(query_parameters):
 
     top = None
     skip = None
     expand_code = None
-    try:
-        query_parameters = request.args
 
-        top = int(query_parameters["$top"]) if "$top" in query_parameters else 100
+    top = int(query_parameters["$top"]) if "$top" in query_parameters else 100
 
-        skip = int(query_parameters["$skip"]) if "$skip" in query_parameters else 0
+    skip = int(query_parameters["$skip"]) if "$skip" in query_parameters else 0
 
-        expand_type_list = []
-        expand_code = 0
-        if "$expand" in query_parameters:
-            expand_type_list = query_parameters["$expand"].lower().split(",")
-            if len(expand_type_list) == 0:
-                expand_code = -1
-            if "datastream" in expand_type_list:
-                expand_code += 1
-                expand_type_list.remove("datastream")
-            if "featureofinterest" in expand_type_list:
-                expand_code += 2
-                expand_type_list.remove("featureofinterest")
-            if len(expand_type_list) != 0:
-                expand_code = -1
-
-    except Exception as e:
-        raise Exception("Query Parsing Error")
+    expand_type_list = []
+    expand_code = 0
+    if "$expand" in query_parameters:
+        expand_type_list = list(set(query_parameters["$expand"].lower().split(",")))
+        if len(expand_type_list) == 0:
+            expand_code = -1
+        if "datastream" in expand_type_list:
+            expand_code += 1
+            expand_type_list.remove("datastream")
+        if "featureofinterest" in expand_type_list:
+            expand_code += 2
+            expand_type_list.remove("featureofinterest")
+        if len(expand_type_list) != 0:
+            expand_code = -1
 
     return top, skip, expand_code
+
+
+def parse_select_observation_args(query_parameters):
+
+    selects = set()
+    allowed_selects = set(
+        [
+            "phenomenontimebegin",
+            "phenomenontimeend",
+            "result",
+            "resulttime",
+            "datastream",
+            "featureofinterest",
+        ]
+    )
+
+    if "$select" in query_parameters:
+        selects = set(query_parameters["$select"].lower().split(","))
+
+        if (selects - allowed_selects) != set():
+            logging.debug(f" selects - allowed selects {selects - allowed_selects}")
+            raise Exception("Unrecognized select options")
+    else:
+        selects = None
+
+    return selects
 
 
 class Observation(Resource):
@@ -51,7 +72,9 @@ class Observation(Resource):
         #TODO pagination
         """
         try:
-            obs = Observations.filter_by_id(id)
+            selects = parse_select_observation_args(request.args)
+            obs = Observations.filter_by_id(id, selects)
+
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}
