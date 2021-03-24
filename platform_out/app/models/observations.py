@@ -6,7 +6,7 @@ from app.models.datastreams import Datastreams
 from app.models.foi import FeaturesofInterest
 import json
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 # class ExpandType(Enum):
@@ -36,7 +36,8 @@ class Observations(db.Model):
     def __repr__(self):
         return f"<Observation {self.result}, {self.resulttime}>"
 
-    def to_json(x):
+    @classmethod
+    def to_json(cls, x):
         return {
             "@iot.id": x.id,
             "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})",
@@ -48,7 +49,8 @@ class Observations(db.Model):
             "FeatureOfInterest@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/FeatureOfInterest",
         }
 
-    def to_expanded_datastream_json(data_dict, x):
+    @classmethod
+    def to_expanded_datastream_json(cls, data_dict, x):
         del data_dict["Datastream@iot.navigationLink"]
         data_dict["Datastream"] = {
             "@iot.id": x.datastream_id,
@@ -62,37 +64,69 @@ class Observations(db.Model):
         }
         return data_dict
 
-    def to_expanded_foi_json(data_dict, x):
+    @classmethod
+    def to_expanded_foi_json(cls, data_dict, x):
         del data_dict["FeatureOfInterest@iot.navigationLink"]
-        data_dict["FeatureOfInterest"] = {
-            "@iot.id": x.featureofinterest_id,
-            "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/FeaturesOfInterest({x.featureofinterest_id})",
-            "name": x.foi_name,
-            "description": x.foi_description,
-            "encodingtype": x.foi_encodingtype,
-            "feature": json.loads(x.foi_feature),
-            "Observations@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/FeaturesOfInterest({x.featureofinterest_id})/Observations",
-        }
+        if x.featureofinterest_id:
+            data_dict["FeatureOfInterest"] = {
+                "@iot.id": x.featureofinterest_id,
+                "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/FeaturesOfInterest({x.featureofinterest_id})",
+                "name": x.foi_name,
+                "description": x.foi_description,
+                "encodingtype": x.foi_encodingtype,
+                "feature": json.loads(x.foi_feature),
+                "Observations@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/FeaturesOfInterest({x.featureofinterest_id})/Observations",
+            }
+        else:
+            data_dict["FeatureOfInterest"] = None
         return data_dict
 
-    def expand_to_json(x, expand_code):
+    @classmethod
+    def expand_to_json(cls, x, expand_code):
         result = Observations.to_json(x)
 
-        if (expand_code == 1 or expand_code == 3):
+        if expand_code == 1 or expand_code == 3:
             result = Observations.to_expanded_datastream_json(result, x)
-        if (expand_code == 2 or expand_code == 3):
+        if expand_code == 2 or expand_code == 3:
             result = Observations.to_expanded_foi_json(result, x)
 
         return result
 
-    def get_query(top, skip, expand_code):
+    @classmethod
+    def get_nextlink_queryparams(cls, top, skip, expand_code):
+
+        query_params = []
+        if top:
+            query_params.append(f"$top={top}")
+        if skip >= 0:
+            query_params.append(f"$skip={skip+100}")
+
+        expand_strings_list = []
+        if expand_code == 1 or expand_code == 3:
+            expand_strings_list.append("datastream")
+        if expand_code == 2 or expand_code == 3:
+            expand_strings_list.append("featureofinterest")
+
+        query_params.append(f"$expand={','.join(expand_strings_list)}")
+
+        url_string = f"?{'&'.join(query_params)}"
+
+        if url_string == "?":
+            url_string == ""
+
+        return url_string
+
+    @classmethod
+    def get_expanded_query(cls, base_query, top, skip, expand_code):
         query = None
-        if (expand_code == 0) :
-            query = Observations.query.limit(top).offset(skip)
-        elif (expand_code == 1) :
-            query = Observations.query.join(
+        if expand_code == 0:
+            query = base_query.limit(top).offset(skip)
+        elif expand_code == 1:
+            query = (
+                base_query.join(
                     Datastreams, Observations.datastream_id == Datastreams.id
-                ).add_columns(
+                )
+                .add_columns(
                     Observations.id,
                     Observations.result,
                     Observations.resulttime,
@@ -105,12 +139,17 @@ class Observations(db.Model):
                     Datastreams.description.label("ds_description"),
                     Datastreams.thing_link.label("ds_thing_link"),
                     Datastreams.sensor_link.label("ds_sensor_link"),
-                ).limit(top).offset(skip)
-        elif (expand_code == 2) :
-            query = Observations.query.join(
+                )
+                .limit(top)
+                .offset(skip)
+            )
+        elif expand_code == 2:
+            query = (
+                base_query.outerjoin(
                     FeaturesofInterest,
                     Observations.featureofinterest_id == FeaturesofInterest.id,
-                ).add_columns(
+                )
+                .add_columns(
                     Observations.id,
                     Observations.result,
                     Observations.resulttime,
@@ -122,12 +161,20 @@ class Observations(db.Model):
                     FeaturesofInterest.description.label("foi_description"),
                     FeaturesofInterest.feature.label("foi_feature"),
                     FeaturesofInterest.encodingtype.label("foi_encodingtype"),
-                ).limit(top).offset(skip)
-        elif (expand_code == 3) :
-            query = Observations.query.join(
+                )
+                .limit(top)
+                .offset(skip)
+            )
+        elif expand_code == 3:
+            query = (
+                base_query.join(
+                    Datastreams, Observations.datastream_id == Datastreams.id
+                )
+                .outerjoin(
                     FeaturesofInterest,
                     Observations.featureofinterest_id == FeaturesofInterest.id,
-                ).join(Datastreams, Observations.datastream_id == Datastreams.id).add_columns(
+                )
+                .add_columns(
                     Observations.id,
                     Observations.result,
                     Observations.resulttime,
@@ -144,11 +191,12 @@ class Observations(db.Model):
                     FeaturesofInterest.description.label("foi_description"),
                     FeaturesofInterest.feature.label("foi_feature"),
                     FeaturesofInterest.encodingtype.label("foi_encodingtype"),
-                ).limit(top).offset(skip)
+                )
+                .limit(top)
+                .offset(skip)
+            )
 
         return query
-
-
 
     @classmethod
     def filter_by_id(cls, id):
@@ -165,175 +213,45 @@ class Observations(db.Model):
         return result
 
     @classmethod
-    def filter_by_datastream_id(cls, id, top, skip):
+    def filter_by_datastream_id(cls, id, top, skip, expand_code):
 
         count = Observations.query.filter(Observations.datastream_id == id).count()
-        obs_list = {
-            "@iot.count": count,
-            "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams({id})Observations?$top={top}&$skip={skip+100}",
-            "value": list(
-                map(
-                    lambda x: Observations.to_json(x),
-                    Observations.query.filter(Observations.datastream_id == id)
-                    .limit(top)
-                    .offset(skip)
-                    .all(),
-                )
-            ),
-        }
-
+        if expand_code != -1:
+            obs_list = {
+                "@iot.count": count,
+                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams({id})/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code)}",
+                "value": list(
+                    map(
+                        lambda x: Observations.expand_to_json(x, expand_code),
+                        Observations.get_expanded_query(
+                            Observations.query.filter(Observations.datastream_id == id),
+                            top,
+                            skip,
+                            expand_code,
+                        ).all(),
+                    )
+                ),
+            }
+        else:
+            obs_list = {"error": "unrecognized expand options"}
         return obs_list
-
-    # @classmethod
-    # def return_page(cls, top, skip):
-    #     count = Observations.query.count()
-    #     obs_list = {
-    #         "@iot.count": count,
-    #         "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations?$top={top}&$skip={skip+100}",
-    #         "value": list(
-    #             map(
-    #                 lambda x: Observations.to_json(x),
-    #                 Observations.query.limit(top).offset(skip).all(),
-    #             )
-    #         ),
-    #     }
-    #     return obs_list
 
     @classmethod
     def return_page_with_expand(cls, top, skip, expand_code):
         count = Observations.query.count()
-        if expand_code != -1 :
+        if expand_code != -1:
             obs_list = {
                 "@iot.count": count,
-                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations?$top={top}&$skip={skip+100}&$expand=datastream,featureofinterest",
-                "value": list(map(lambda x: Observations.expand_to_json(x, expand_code), Observations.get_query(top,skip,expand_code).all())),
+                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code)}",
+                "value": list(
+                    map(
+                        lambda x: Observations.expand_to_json(x, expand_code),
+                        Observations.get_expanded_query(
+                            Observations.query, top, skip, expand_code
+                        ).all(),
+                    )
+                ),
             }
-        # if expand_code == 0:
-        #     obs_list = {
-        #         "@iot.count": count,
-        #         "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations?$top={top}&$skip={skip+100}",
-        #         "value": list(
-        #             map(
-        #                 lambda x: Observations.to_json(x),
-        #                 Observations.query.limit(top).offset(skip).all(),
-        #             )
-        #         ),
-        #     }
-        # elif expand_code == 1:  # datastream
-        #     queried_list = (
-        #         Observations.query.join(
-        #             Datastreams, Observations.datastream_id == Datastreams.id
-        #         )
-        #         .add_columns(
-        #             Observations.id,
-        #             Observations.result,
-        #             Observations.resulttime,
-        #             Observations.phenomenontime_begin,
-        #             Observations.phenomenontime_end,
-        #             Observations.featureofinterest_id,
-        #             Observations.datastream_id,
-        #             Datastreams.unitofmeasurement.label("ds_unitofmeasurement"),
-        #             Datastreams.name.label("ds_name"),
-        #             Datastreams.description.label("ds_description"),
-        #             Datastreams.thing_link.label("ds_thing_link"),
-        #             Datastreams.sensor_link.label("ds_sensor_link"),
-        #         )
-        #         .limit(top)
-        #         .offset(skip)
-        #         .all()
-        #     )
-
-        #     # def expand_to_json(x):
-        #     #     result = Observations.to_json(x)
-        #     #     result = Observations.to_expanded_datastream_json(result, x)
-        #     #     return result
-
-        #     obs_list = {
-        #         "@iot.count": count,
-        #         "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations?$top={top}&$skip={skip+100}&$expand=datastream",
-        #         "value": list(map(lambda x: Observations.expand_to_json(x, expand_code), queried_list)),
-        #     }
-        # elif expand_code == 2:  # featureofinterest
-        #     queried_list = (
-        #         Observations.query.join(
-        #             FeaturesofInterest,
-        #             Observations.featureofinterest_id == FeaturesofInterest.id,
-        #         )
-        #         .add_columns(
-        #             Observations.id,
-        #             Observations.result,
-        #             Observations.resulttime,
-        #             Observations.phenomenontime_begin,
-        #             Observations.phenomenontime_end,
-        #             Observations.featureofinterest_id,
-        #             Observations.datastream_id,
-        #             FeaturesofInterest.name.label("foi_name"),
-        #             FeaturesofInterest.description.label("foi_description"),
-        #             FeaturesofInterest.feature.label("foi_feature"),
-        #             FeaturesofInterest.encodingtype.label("foi_encodingtype"),
-        #         )
-        #         .limit(top)
-        #         .offset(skip)
-        #         .all()
-        #     )
-        #     # def object_as_dict(obj):
-        #     #    return {c.key: getattr(obj, c.key) for c in inspect(obj).mapper.column_attrs}
-
-        #     # print(queried_list)
-
-        #     # def expand_to_json(x):
-        #     #     result = Observations.to_json(x)
-        #     #     result = Observations.to_expanded_foi_json(result, x)
-        #     #     return result
-
-        #     obs_list = {
-        #         "@iot.count": count,
-        #         "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations?$top={top}&$skip={skip+100}&$expand=featureofinterest",
-        #         "value": list(map(lambda x: Observations.expand_to_json(x, expand_code), queried_list)),
-        #     }
-
-        # elif expand_code == 3:  # both
-        #     queried_list = (
-        #         Observations.query.join(
-        #             FeaturesofInterest,
-        #             Observations.featureofinterest_id == FeaturesofInterest.id,
-        #         )
-        #         .join(Datastreams, Observations.datastream_id == Datastreams.id)
-        #         .add_columns(
-        #             Observations.id,
-        #             Observations.result,
-        #             Observations.resulttime,
-        #             Observations.phenomenontime_begin,
-        #             Observations.phenomenontime_end,
-        #             Observations.datastream_id,
-        #             Datastreams.unitofmeasurement.label("ds_unitofmeasurement"),
-        #             Datastreams.name.label("ds_name"),
-        #             Datastreams.description.label("ds_description"),
-        #             Datastreams.thing_link.label("ds_thing_link"),
-        #             Datastreams.sensor_link.label("ds_sensor_link"),
-        #             Observations.featureofinterest_id,
-        #             FeaturesofInterest.name.label("foi_name"),
-        #             FeaturesofInterest.description.label("foi_description"),
-        #             FeaturesofInterest.feature.label("foi_feature"),
-        #             FeaturesofInterest.encodingtype.label("foi_encodingtype"),
-        #         )
-        #         .limit(top)
-        #         .offset(skip)
-        #         .all()
-        #     )
-
-        #     # # print(queried_list)
-        #     # def expand_to_json(x):
-        #     #     result = Observations.to_json(x)
-        #     #     result = Observations.to_expanded_foi_json(result, x)
-        #     #     result = Observations.to_expanded_datastream_json(result, x)
-        #     #     return result
-
-        #     obs_list = {
-        #         "@iot.count": count,
-        #         "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations?$top={top}&$skip={skip+100}&$expand=datastream,featureofinterest",
-        #         "value": list(map(lambda x: Observations.expand_to_json(x, expand_code), queried_list)),
-        #     }
         else:
             obs_list = {"error": "unrecognized expand options"}
 
