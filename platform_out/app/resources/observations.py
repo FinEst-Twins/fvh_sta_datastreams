@@ -68,8 +68,7 @@ def parse_select_observation_args(query_parameters):
 class Observation(Resource):
     def get(self, id):
         """
-        query data streams
-        #TODO pagination
+        query observations by obervation id
         """
         try:
             selects = parse_select_observation_args(request.args)
@@ -99,8 +98,7 @@ api.add_resource(Observation, "/OGCSensorThings/v1.0/Observations(<int:id>)")
 class ObservationbyDSId(Resource):
     def get(self, id):
         """
-        query data streams
-        #TODO pagination
+        query observations by datastream id
         """
         try:
             top, skip, expand_code = parse_args(request.args)
@@ -132,8 +130,7 @@ api.add_resource(
 class ObservationsList(Resource):
     def get(self):
         """
-        query observations
-        #TODO pagination
+        query all obervations
         """
         try:
             top, skip, expand_code = parse_args(request.args)

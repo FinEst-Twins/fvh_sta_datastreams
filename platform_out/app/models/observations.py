@@ -7,9 +7,9 @@ from app.models.foi import FeaturesofInterest
 import json
 import datetime
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
-
+# TODO ?
 # class ExpandType(Enum):
 #     Neither = 0
 #     Datastream = 1
@@ -39,12 +39,21 @@ class Observations(db.Model):
 
     @classmethod
     def to_json(cls, x):
+        """
+        returns observations in json format
+        """
         return {
             "@iot.id": x.id,
             "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})",
-            "phenomenonTimeBegin": x.phenomenontime_begin.strftime("%d-%m-%YT%H:%M:%SZ") if x.phenomenontime_begin else None,
-            "phenomenonTimeEnd": x.phenomenontime_end.strftime("%d-%m-%YT%H:%M:%SZ") if x.phenomenontime_end else None,
-            "resultTime": x.resulttime.strftime("%d-%m-%YT%H:%M:%SZ") if x.resulttime else None,
+            "phenomenonTimeBegin": x.phenomenontime_begin.strftime("%d-%m-%YT%H:%M:%SZ")
+            if x.phenomenontime_begin
+            else None,
+            "phenomenonTimeEnd": x.phenomenontime_end.strftime("%d-%m-%YT%H:%M:%SZ")
+            if x.phenomenontime_end
+            else None,
+            "resultTime": x.resulttime.strftime("%d-%m-%YT%H:%M:%SZ")
+            if x.resulttime
+            else None,
             "result": x.result,
             "Datastream@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/Datastream",
             "FeatureOfInterest@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/FeatureOfInterest",
@@ -52,6 +61,9 @@ class Observations(db.Model):
 
     @classmethod
     def to_selected_json(cls, x, selectparams):
+        """
+        returns selected fields of observations in json format
+        """
         datadict = Observations.to_json(x)
 
         key_dict = {
@@ -71,6 +83,9 @@ class Observations(db.Model):
 
     @classmethod
     def to_expanded_datastream_json(cls, data_dict, x):
+        """
+        returns Observations json with Datastreams expanded as its own json object
+        """
         del data_dict["Datastream@iot.navigationLink"]
         data_dict["Datastream"] = {
             "@iot.id": x.datastream_id,
@@ -86,6 +101,9 @@ class Observations(db.Model):
 
     @classmethod
     def to_expanded_foi_json(cls, data_dict, x):
+        """
+        returns Observations json with FeatreOfInterest expanded as its own json object
+        """
         del data_dict["FeatureOfInterest@iot.navigationLink"]
         if x.featureofinterest_id:
             data_dict["FeatureOfInterest"] = {
@@ -103,6 +121,9 @@ class Observations(db.Model):
 
     @classmethod
     def expand_to_json(cls, x, expand_code):
+        """
+        applies expansion of fields as per expand code given
+        """
         result = Observations.to_json(x)
 
         if expand_code == 1 or expand_code == 3:
@@ -114,6 +135,9 @@ class Observations(db.Model):
 
     @classmethod
     def get_nextlink_queryparams(cls, top, skip, expand_code):
+        """
+        returns nextLink used for paginating based on current parameters
+        """
         # TODO see if skip overreaches limit
 
         query_params = []
@@ -139,6 +163,10 @@ class Observations(db.Model):
 
     @classmethod
     def get_expanded_query(cls, base_query, top, skip, expand_code):
+        """
+        applies join query based on expand code.
+        applies limit() and offset() with top and skip paremeters
+        """
         query = None
         if expand_code == 0:
             query = base_query.limit(top).offset(skip)
@@ -221,6 +249,9 @@ class Observations(db.Model):
 
     @classmethod
     def filter_by_id(cls, id, selects):
+        """
+        applies query to filter Observations by Observation id
+        """
 
         obs_list = []
         if id:
@@ -237,7 +268,9 @@ class Observations(db.Model):
 
     @classmethod
     def filter_by_datastream_id(cls, id, top, skip, expand_code):
-
+        """
+        applies query to filter Observations by datastream id
+        """
         count = Observations.query.filter(Observations.datastream_id == id).count()
         if count == 0:
             obs_list = {"@iot.count": count}
@@ -263,6 +296,10 @@ class Observations(db.Model):
 
     @classmethod
     def return_page_with_expand(cls, top, skip, expand_code):
+        """
+        applies query to join Observations table with Datastreams table of FeatureOfInterest table or both
+        based on expand code
+        """
         count = Observations.query.count()
         if count == 0:
             obs_list = {"@iot.count": count}
