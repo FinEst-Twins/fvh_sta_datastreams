@@ -275,26 +275,27 @@ class Observations(db.Model):
         if obs_list.count() == 0:
             result = None
         elif expand_code != -1:
+            result = Observations.get_expanded_query(
+                Observations.query.filter(Observations.id == id),
+                1,
+                0,
+                expand_code,
+            ).one()
             if selects:
-               # resulobs_listt = Observations.to_selected_json(obs_list[0], selects)
-                obs_list = Observations.expand_to_selected_json( Observations.get_expanded_query(
-                    Observations.query.filter(Observations.id == id),
-                    1,
-                    0,
+                obs = Observations.expand_to_selected_json(
+                    result,
                     expand_code,
-                ).one(), expand_code, selects )
+                    selects,
+                )
             else:
-                #obs_list = Observations.to_json(obs_list[0])
-                obs_list = Observations.expand_to_json( Observations.get_expanded_query(
-                    Observations.query.filter(Observations.id == id),
-                    1,
-                    0,
+                obs = Observations.expand_to_json(
+                    result,
                     expand_code,
-                ).one(), expand_code )
+                )
 
         else:
-            obs_list = {"error": "unrecognized expand options"}
-        return obs_list
+            obs = {"error": "unrecognized expand options"}
+        return obs
 
     @classmethod
     def filter_by_datastream_id(cls, id, top, skip, expand_code):
