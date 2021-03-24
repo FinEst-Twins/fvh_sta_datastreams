@@ -77,7 +77,7 @@ class Observations(db.Model):
 
         new_result = {}
         for key in selectparams:
-            new_result[key] = datadict[key_dict[key]]
+            new_result[key_dict[key]] = datadict[key_dict[key]]
 
         return new_result
 
@@ -118,6 +118,21 @@ class Observations(db.Model):
         else:
             data_dict["FeatureOfInterest"] = None
         return data_dict
+
+    @classmethod
+    def expand_to_selected_json(cls, x, expand_code, selects):
+        """
+        applies expansion of fields as per expand code given
+        """
+        result = Observations.to_selected_json(x, selects)
+        print(result)
+
+        if (expand_code == 1 or expand_code == 3) and ("datastream" in selects):
+            result = Observations.to_expanded_datastream_json(result, x)
+        if (expand_code == 2 or expand_code == 3) and ("featureofinterest" in selects):
+            result = Observations.to_expanded_foi_json(result, x)
+
+        return result
 
     @classmethod
     def expand_to_json(cls, x, expand_code):
@@ -248,7 +263,7 @@ class Observations(db.Model):
         return query
 
     @classmethod
-    def filter_by_id(cls, id, selects):
+    def filter_by_id(cls, id, expand_code, selects):
         """
         applies query to filter Observations by Observation id
         """
@@ -259,12 +274,27 @@ class Observations(db.Model):
 
         if obs_list.count() == 0:
             result = None
-        elif selects:
-            result = Observations.to_selected_json(obs_list[0], selects)
-        else:
-            result = Observations.to_json(obs_list[0])
+        elif expand_code != -1:
+            if selects:
+               # resulobs_listt = Observations.to_selected_json(obs_list[0], selects)
+                obs_list = Observations.expand_to_selected_json( Observations.get_expanded_query(
+                    Observations.query.filter(Observations.id == id),
+                    1,
+                    0,
+                    expand_code,
+                ).one(), expand_code, selects )
+            else:
+                #obs_list = Observations.to_json(obs_list[0])
+                obs_list = Observations.expand_to_json( Observations.get_expanded_query(
+                    Observations.query.filter(Observations.id == id),
+                    1,
+                    0,
+                    expand_code,
+                ).one(), expand_code )
 
-        return result
+        else:
+            obs_list = {"error": "unrecognized expand options"}
+        return obs_list
 
     @classmethod
     def filter_by_datastream_id(cls, id, top, skip, expand_code):

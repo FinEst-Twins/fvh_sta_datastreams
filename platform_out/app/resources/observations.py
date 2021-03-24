@@ -36,11 +36,6 @@ def parse_args(query_parameters):
         if len(expand_type_list) != 0:
             expand_code = -1
 
-    return top, skip, expand_code
-
-
-def parse_select_observation_args(query_parameters):
-
     selects = set()
     allowed_selects = set(
         [
@@ -62,7 +57,8 @@ def parse_select_observation_args(query_parameters):
     else:
         selects = None
 
-    return selects
+    return top, skip, expand_code, selects
+
 
 
 class Observation(Resource):
@@ -71,8 +67,8 @@ class Observation(Resource):
         query observations by obervation id
         """
         try:
-            selects = parse_select_observation_args(request.args)
-            obs = Observations.filter_by_id(id, selects)
+            top, skip, expand_code, selects = parse_args(request.args)
+            obs = Observations.filter_by_id(id, expand_code, selects)
 
         except Exception as e:
             logging.warning(e)
