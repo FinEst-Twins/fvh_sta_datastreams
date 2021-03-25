@@ -2,10 +2,9 @@ from flask import jsonify, Blueprint, request
 from flask_restful import Resource, Api
 from app.models.observations import Observations
 import logging
-
+from app.resources.parser import ArgParser
 
 logging.basicConfig(level=logging.INFO)
-
 
 observations_blueprint = Blueprint("observations", __name__)
 api = Api(observations_blueprint)
@@ -13,18 +12,13 @@ api = Api(observations_blueprint)
 
 def parse_args(query_parameters):
 
-    top = None
-    skip = None
-    expand_code = None
-
-    top = int(query_parameters["$top"]) if "$top" in query_parameters else 100
-
-    skip = int(query_parameters["$skip"]) if "$skip" in query_parameters else 0
+    top, skip, expand, select = ArgParser.get_args()
+    print(top,skip,expand,select)
 
     expand_type_list = []
     expand_code = 0
-    if "$expand" in query_parameters:
-        expand_type_list = list(set(query_parameters["$expand"].lower().split(",")))
+    if expand:
+        expand_type_list = list(set(expand.lower().split(",")))
         if len(expand_type_list) == 0:
             expand_code = -1
         if "datastream" in expand_type_list:
@@ -48,8 +42,8 @@ def parse_args(query_parameters):
         ]
     )
 
-    if "$select" in query_parameters:
-        selects = set(query_parameters["$select"].lower().split(","))
+    if select:
+        selects = set(select.lower().split(","))
 
         if (selects - allowed_selects) != set():
             logging.debug(f" selects - allowed selects {selects - allowed_selects}")
@@ -58,7 +52,6 @@ def parse_args(query_parameters):
         selects = None
 
     return top, skip, expand_code, selects
-
 
 
 class Observation(Resource):
@@ -97,7 +90,7 @@ class ObservationbyDSId(Resource):
         query observations by datastream id
         """
         try:
-            top, skip, expand_code = parse_args(request.args)
+            top, skip, expand_code, selects = parse_args(request.args)
 
             obs = Observations.filter_by_datastream_id(id, top, skip, expand_code)
         except Exception as e:
@@ -129,7 +122,7 @@ class ObservationsList(Resource):
         query all obervations
         """
         try:
-            top, skip, expand_code = parse_args(request.args)
+            top, skip, expand_code, selects = parse_args(request.args)
             obs_list = Observations.return_page_with_expand(top, skip, expand_code)
         except Exception as e:
             logging.warning(e)

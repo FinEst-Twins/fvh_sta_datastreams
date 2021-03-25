@@ -2,6 +2,7 @@ from flask import jsonify, request, Blueprint
 from flask_restful import Resource, Api
 from app.models.datastreams import Datastreams
 import logging
+from app.resources.parser import ArgParser
 
 logging.basicConfig(level=logging.INFO)
 
@@ -9,11 +10,54 @@ datastreams_blueprint = Blueprint("datastream", __name__)
 api = Api(datastreams_blueprint)
 
 
+def parse_args(query_parameters):
+
+    top, skip, expand, select = ArgParser.get_args()
+    print(top, skip, expand, select)
+
+    expand_type_list = []
+    expand_code = 0
+    if expand:
+        expand_type_list = list(set(expand.lower().split(",")))
+        if len(expand_type_list) == 0:
+            expand_code = -1
+        if "thing" in expand_type_list:
+            expand_code += 1
+            expand_type_list.remove("thing")
+        if "sensor" in expand_type_list:
+            expand_code += 2
+            expand_type_list.remove("thing")
+        if len(expand_type_list) != 0:
+            expand_code = -1
+
+    selects = set()
+    allowed_selects = set(
+        [
+            "name",
+            "description",
+            "unitofmeasurement",
+            "thing",
+            "sensor",
+            "observation",
+        ]
+    )
+
+    if select:
+        selects = set(select.lower().split(","))
+
+        if (selects - allowed_selects) != set():
+            logging.debug(f" selects - allowed selects {selects - allowed_selects}")
+            raise Exception("Unrecognized select options")
+    else:
+        selects = None
+
+    return top, skip, expand_code, selects
+
+
 class DataStream(Resource):
     def get(self):
         """
-        query data streams
-        #TODO pagination
+        query data streams using thing and sensor as parameters
         """
         try:
             query_parameters = request.args
@@ -57,8 +101,7 @@ api.add_resource(DataStream, "/datastream")
 class DSbyID(Resource):
     def get(self, ds_id):
         """
-        query data streams
-        #TODO pagination
+        query data streams by Datastream Id
         """
         try:
             datastream_entity = Datastreams.filter_by_id(ds_id)
@@ -79,7 +122,8 @@ class DSbyID(Resource):
             response.status_code = 200
             return response
 
-#api.add_resource(DSbyID, "/OGCSensorThings/v1.0/Datastreams(<int:ds_id>)")
+
+# api.add_resource(DSbyID, "/OGCSensorThings/v1.0/Datastreams(<int:ds_id>)")
 api.add_resource(DSbyID, "/OGCSensorThings/v1.0/Datastreams/<int:ds_id>")
 
 
@@ -90,7 +134,8 @@ class DSList(Resource):
         #TODO pagination
         """
         try:
-            datastreams = Datastreams.return_all()
+            top, skip, expand_code, selects = parse_args(request.args)
+            ds_list = Datastreams.return_page_with_expand(top, skip, expand_code, selects)
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}
@@ -98,8 +143,8 @@ class DSList(Resource):
             response.status_code = 400
             return response
 
-        if datastreams:
-            response = jsonify(datastreams)
+        if ds_list:
+            response = jsonify(ds_list)
             response.status_code = 200
             return response
         else:
