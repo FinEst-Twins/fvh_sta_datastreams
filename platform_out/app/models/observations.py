@@ -66,20 +66,23 @@ class Observations(db.Model):
         """
         datadict = Observations.to_json(x)
 
-        key_dict = {
-            "datastream": "Datastream@iot.navigationLink",
-            "featureofinterest": "FeatureOfInterest@iot.navigationLink",
-            "phenomenontimebegin": "phenomenonTimeBegin",
-            "phenomenontimeend": "phenomenonTimeEnd",
-            "result": "result",
-            "resulttime": "resultTime",
-        }
+        if selectparams:
+            key_dict = {
+                "datastream": "Datastream@iot.navigationLink",
+                "featureofinterest": "FeatureOfInterest@iot.navigationLink",
+                "phenomenontimebegin": "phenomenonTimeBegin",
+                "phenomenontimeend": "phenomenonTimeEnd",
+                "result": "result",
+                "resulttime": "resultTime",
+            }
 
-        new_result = {}
-        for key in selectparams:
-            new_result[key_dict[key]] = datadict[key_dict[key]]
+            new_result = {}
+            for key in selectparams:
+                new_result[key_dict[key]] = datadict[key_dict[key]]
 
-        return new_result
+            datadict = new_result
+
+        return datadict
 
     @classmethod
     def to_expanded_datastream_json(cls, data_dict, x):
@@ -94,8 +97,8 @@ class Observations(db.Model):
             "name": x.ds_description,
             "unitOfMeasurement": x.ds_unitofmeasurement,
             "Observations@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastreams({x.datastream_id})/Observations",
-            "Sensor@iot.navigationLink": f"to be replaced with link - {x.ds_sensor_link}",
-            "Thing@iot.navigationLink": f"to be replaced with link - {x.ds_thing_link}",
+            "Sensor@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastreams({x.datastream_id})/Sensor",
+            "Thing@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastreams({x.datastream_id})/Thing",
         }
         return data_dict
 
@@ -125,28 +128,32 @@ class Observations(db.Model):
         applies expansion of fields as per expand code given
         """
         result = Observations.to_selected_json(x, selects)
-        print(result)
 
-        if (expand_code == 1 or expand_code == 3) and ("datastream" in selects):
+        #if selects:
+        select_datastream = True if (selects is not None and "datastream" in selects) else False
+        select_foi = True if (selects is not None and "featureofinterest" in selects) else False
+
+
+        if (expand_code == 1 or expand_code == 3) and select_datastream:
             result = Observations.to_expanded_datastream_json(result, x)
-        if (expand_code == 2 or expand_code == 3) and ("featureofinterest" in selects):
+        if (expand_code == 2 or expand_code == 3) and select_foi:
             result = Observations.to_expanded_foi_json(result, x)
 
         return result
 
-    @classmethod
-    def expand_to_json(cls, x, expand_code):
-        """
-        applies expansion of fields as per expand code given
-        """
-        result = Observations.to_json(x)
+    # @classmethod
+    # def expand_to_json(cls, x, expand_code):
+    #     """
+    #     applies expansion of fields as per expand code given
+    #     """
+    #     result = Observations.to_json(x)
 
-        if expand_code == 1 or expand_code == 3:
-            result = Observations.to_expanded_datastream_json(result, x)
-        if expand_code == 2 or expand_code == 3:
-            result = Observations.to_expanded_foi_json(result, x)
+    #     if expand_code == 1 or expand_code == 3:
+    #         result = Observations.to_expanded_datastream_json(result, x)
+    #     if expand_code == 2 or expand_code == 3:
+    #         result = Observations.to_expanded_foi_json(result, x)
 
-        return result
+    #     return result
 
     @classmethod
     def get_nextlink_queryparams(cls, top, skip, expand_code):
@@ -201,8 +208,8 @@ class Observations(db.Model):
                     Datastreams.unitofmeasurement.label("ds_unitofmeasurement"),
                     Datastreams.name.label("ds_name"),
                     Datastreams.description.label("ds_description"),
-                    Datastreams.thing_link.label("ds_thing_link"),
-                    Datastreams.sensor_link.label("ds_sensor_link"),
+                    Datastreams.thing_id.label("ds_thing_id"),
+                    Datastreams.sensor_id.label("ds_sensor_id"),
                 )
                 .limit(top)
                 .offset(skip)
@@ -248,8 +255,8 @@ class Observations(db.Model):
                     Datastreams.unitofmeasurement.label("ds_unitofmeasurement"),
                     Datastreams.name.label("ds_name"),
                     Datastreams.description.label("ds_description"),
-                    Datastreams.thing_link.label("ds_thing_link"),
-                    Datastreams.sensor_link.label("ds_sensor_link"),
+                    Datastreams.thing_id.label("ds_thing_id"),
+                    Datastreams.sensor_id.label("ds_sensor_id"),
                     Observations.featureofinterest_id,
                     FeaturesofInterest.name.label("foi_name"),
                     FeaturesofInterest.description.label("foi_description"),
@@ -281,24 +288,19 @@ class Observations(db.Model):
                 0,
                 expand_code,
             ).one()
-            if selects:
-                obs = Observations.expand_to_selected_json(
-                    result,
-                    expand_code,
-                    selects,
-                )
-            else:
-                obs = Observations.expand_to_json(
-                    result,
-                    expand_code,
-                )
+
+            obs = Observations.expand_to_selected_json(
+                result,
+                expand_code,
+                selects)
+
 
         else:
             obs = {"error": "unrecognized expand options"}
         return obs
 
     @classmethod
-    def filter_by_datastream_id(cls, id, top, skip, expand_code):
+    def filter_by_datastream_id(cls, id, top, skip, expand_code, selects):
         """
         applies query to filter Observations by datastream id
         """
@@ -311,7 +313,7 @@ class Observations(db.Model):
                 "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams({id})/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code)}",
                 "value": list(
                     map(
-                        lambda x: Observations.expand_to_json(x, expand_code),
+                        lambda x: Observations.expand_to_selected_json(x, expand_code, selects),
                         Observations.get_expanded_query(
                             Observations.query.filter(Observations.datastream_id == id),
                             top,
@@ -326,7 +328,7 @@ class Observations(db.Model):
         return obs_list
 
     @classmethod
-    def return_page_with_expand(cls, top, skip, expand_code):
+    def return_page_with_expand(cls, top, skip, expand_code, selects):
         """
         applies query to join Observations table with Datastreams table of FeatureOfInterest table or both
         based on expand code
@@ -340,7 +342,7 @@ class Observations(db.Model):
                 "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code)}",
                 "value": list(
                     map(
-                        lambda x: Observations.expand_to_json(x, expand_code),
+                        lambda x: Observations.expand_to_selected_json(x, expand_code, selects),
                         Observations.get_expanded_query(
                             Observations.query, top, skip, expand_code
                         ).all(),

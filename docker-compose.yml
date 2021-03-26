@@ -14,12 +14,12 @@ services:
       - FLASK_APP=app/__init__.py
       - FLASK_ENV=development
       - APP_SETTINGS=app.config.DevelopmentConfig
-      - DATABASE_URL=postgresql://postgres:postgres@platform-db:5432/fvh_db_dev   
+      - DATABASE_URL=postgresql://postgres:postgres@platform-db:5432/fvh_db_dev
       - DATABASE_TEST_URL=postgresql://postgres:postgres@platform-db:5432/fvh_db_test
       - SQL_HOST=platform-db
       - SQL_PORT=5432
-      - DATABASE=postgres 
-    depends_on:   
+      - DATABASE=postgres
+    depends_on:
       - platform-db
 
   platform-db:

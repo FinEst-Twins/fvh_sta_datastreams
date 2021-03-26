@@ -92,7 +92,7 @@ class ObservationbyDSId(Resource):
         try:
             top, skip, expand_code, selects = parse_args(request.args)
 
-            obs = Observations.filter_by_datastream_id(id, top, skip, expand_code)
+            obs = Observations.filter_by_datastream_id(id, top, skip, expand_code, selects)
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}
@@ -123,7 +123,7 @@ class ObservationsList(Resource):
         """
         try:
             top, skip, expand_code, selects = parse_args(request.args)
-            obs_list = Observations.return_page_with_expand(top, skip, expand_code)
+            obs_list = Observations.return_page_with_expand(top, skip, expand_code, selects)
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}

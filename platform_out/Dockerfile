@@ -1,5 +1,5 @@
 # pull official base image
-FROM python:3.8.0-alpine
+FROM python:3.8-slim-buster
 
 # set working directory
 WORKDIR /project
@@ -7,17 +7,17 @@ WORKDIR /project
 # set environment varibles
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV FLASK_ENV production
+ENV APP_SETTINGS project.config.ProductionConfig
 
 # add and install requirements
 COPY requirements.txt .
 
-RUN \
- apk update && apk add bash &&\ 
- apk add --no-cache python3 postgresql-libs && \
- apk add --no-cache --virtual .build-deps gcc python3-dev musl-dev postgresql-dev && \
- apk add --no-cache librdkafka librdkafka-dev && \
- apk add netcat-openbsd &&\
- python3 -m pip install -r requirements.txt --no-cache-dir && \
- apk --purge del .build-deps
+## install dependencies
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y netcat-openbsd gcc && \
+    apt-get clean && \
+    python3 -m pip install -r requirements.txt
 
 COPY . /project/

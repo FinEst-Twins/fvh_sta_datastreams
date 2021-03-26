@@ -20,8 +20,6 @@ class Datastreams(db.Model):
     observedproperty_link = db.Column(db.String())
     thing_id = db.Column(db.Integer, index=True)
     sensor_id = db.Column(db.Integer, index=True)
-    thing_id = db.Column(db.Integer, index=True)
-    sensor_id = db.Column(db.Integer, index=True)
 
     @classmethod
     def to_json(cls, x):
@@ -33,10 +31,35 @@ class Datastreams(db.Model):
             "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Datastreams({x.id})",
             "name": x.name,
             "description": x.description,
-            "unit_of_measurement": x.unitofmeasurement,
+            "unitOfMeasurement": x.unitofmeasurement,
             "Sensor@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastream({x.id})/Sensor",
             "Thing@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastream({x.id})/Thing",
         }
+
+    @classmethod
+    def to_selected_json(cls, x, selectparams):
+        """
+        returns selected fields of observations in json format
+        """
+        datadict = Datastreams.to_json(x)
+
+        if selectparams:
+            key_dict = {
+                "thing": "Thing@iot.navigationLink",
+                "sensor": "Sensor@iot.navigationLink",
+                "name": "name",
+                "description": "description",
+                "unitofmeasurement": "unitOfMeasurement"
+            }
+
+            new_result = {}
+            for key in selectparams:
+                new_result[key_dict[key]] = datadict[key_dict[key]]
+
+            datadict = new_result
+
+        return datadict
+
 
     @classmethod
     def to_expanded_thing_json(cls, data_dict, x):
@@ -68,15 +91,20 @@ class Datastreams(db.Model):
         return data_dict
 
     @classmethod
-    def expand_to_json(cls, x, expand_code):
+    def expand_to_selected_json(cls, x, expand_code, selects):
         """
         applies expansion of fields as per expand code given
         """
-        result = Datastreams.to_json(x)
+        result = Datastreams.to_selected_json(x, selects)
 
-        if expand_code == 1 or expand_code == 3:
+        #if selects:
+        select_thing = True if (selects is not None and "thing" in selects) else False
+        select_sensor = True if (selects is not None and "sensor" in selects) else False
+
+
+        if (expand_code == 1 or expand_code == 3) and select_thing:
             result = Datastreams.to_expanded_thing_json(result, x)
-        if expand_code == 2 or expand_code == 3:
+        if (expand_code == 2 or expand_code == 3) and select_sensor:
             result = Datastreams.to_expanded_sensor_json(result, x)
 
         return result
@@ -127,6 +155,7 @@ class Datastreams(db.Model):
                     Datastreams.id,
                     Datastreams.name,
                     Datastreams.description,
+                    Datastreams.unitofmeasurement,
                     Datastreams.thing_id,
                     Datastreams.sensor_id,
                     Things.link.label("th_link")
@@ -144,6 +173,7 @@ class Datastreams(db.Model):
                     Datastreams.id,
                     Datastreams.name,
                     Datastreams.description,
+                    Datastreams.unitofmeasurement,
                     Datastreams.thing_id,
                     Datastreams.sensor_id,
                     Sensors.link.label("ss_link")
@@ -164,6 +194,7 @@ class Datastreams(db.Model):
                     Datastreams.id,
                     Datastreams.name,
                     Datastreams.description,
+                    Datastreams.unitofmeasurement,
                     Datastreams.thing_id,
                     Datastreams.sensor_id,
                     Things.link.label("th_link"),
@@ -228,7 +259,7 @@ class Datastreams(db.Model):
                 "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams{Datastreams.get_nextlink_queryparams(top, skip, expand_code)}",
                 "value": list(
                     map(
-                        lambda x: Datastreams.expand_to_json(x, expand_code),
+                        lambda x: Datastreams.expand_to_selected_json(x, expand_code, selects),
                         Datastreams.get_expanded_query(
                             Datastreams.query, top, skip, expand_code
                         ).all(),
