@@ -124,7 +124,7 @@ class DSbyID(Resource):
 
 
 # api.add_resource(DSbyID, "/OGCSensorThings/v1.0/Datastreams(<int:ds_id>)")
-api.add_resource(DSbyID, "/OGCSensorThings/v1.0/Datastreams/<int:ds_id>")
+api.add_resource(DSbyID, "/Datastreams/<int:ds_id>")
 
 
 class DSList(Resource):
@@ -154,4 +154,4 @@ class DSList(Resource):
             return response
 
 
-api.add_resource(DSList, "/OGCSensorThings/v1.0/Datastreams")
+api.add_resource(DSList, "/Datastreams")

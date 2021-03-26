@@ -81,7 +81,7 @@ class Observation(Resource):
             return response
 
 
-api.add_resource(Observation, "/OGCSensorThings/v1.0/Observations(<int:id>)")
+api.add_resource(Observation, "/Observations(<int:id>)")
 
 
 class ObservationbyDSId(Resource):
@@ -112,7 +112,7 @@ class ObservationbyDSId(Resource):
 
 
 api.add_resource(
-    ObservationbyDSId, "/OGCSensorThings/v1.0/Datastreams(<int:id>)/Observations"
+    ObservationbyDSId, "Datastreams(<int:id>)/Observations"
 )
 
 
@@ -142,4 +142,4 @@ class ObservationsList(Resource):
             return response
 
 
-api.add_resource(ObservationsList, "/OGCSensorThings/v1.0/Observations")
+api.add_resource(ObservationsList, "/Observations")
