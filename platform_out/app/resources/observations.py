@@ -112,7 +112,7 @@ class ObservationbyDSId(Resource):
 
 
 api.add_resource(
-    ObservationbyDSId, "Datastreams(<int:id>)/Observations"
+    ObservationbyDSId, "/Datastreams(<int:id>)/Observations"
 )
 
 
