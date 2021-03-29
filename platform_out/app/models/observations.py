@@ -168,13 +168,15 @@ class Observations(db.Model):
         if skip >= 0:
             query_params.append(f"$skip={skip+100}")
 
-        expand_strings_list = []
-        if expand_code == 1 or expand_code == 3:
-            expand_strings_list.append("datastream")
-        if expand_code == 2 or expand_code == 3:
-            expand_strings_list.append("featureofinterest")
+        print(expand_code)
+        if expand_code > 0:
+            expand_strings_list = []
+            if expand_code == 1 or expand_code == 3:
+                expand_strings_list.append("datastream")
+            if expand_code == 2 or expand_code == 3:
+                expand_strings_list.append("featureofinterest")
 
-        query_params.append(f"$expand={','.join(expand_strings_list)}")
+            query_params.append(f"$expand={','.join(expand_strings_list)}")
 
         url_string = f"?{'&'.join(query_params)}"
 
