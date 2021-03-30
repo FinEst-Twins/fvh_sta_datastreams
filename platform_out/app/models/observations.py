@@ -129,10 +129,12 @@ class Observations(db.Model):
         """
         result = Observations.to_selected_json(x, selects)
 
-        #if selects:
-        select_datastream = True if (selects is not None and "datastream" in selects) else False
-        select_foi = True if (selects is not None and "featureofinterest" in selects) else False
-
+        if selects is None:
+            select_datastream = True
+            select_foi = True
+        else:
+            select_datastream = True if ("datastream" in selects) else False
+            select_foi = True if ("featureofinterest" in selects) else False
 
         if (expand_code == 1 or expand_code == 3) and select_datastream:
             result = Observations.to_expanded_datastream_json(result, x)

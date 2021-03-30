@@ -3,7 +3,9 @@ from sqlalchemy import and_
 from flask import current_app
 from app.models.things import Things
 from app.models.sensors import Sensors
+import logging
 
+logging.basicConfig(level=logging.INFO)
 
 class Datastreams(db.Model):
     __tablename__ = "datastream"
@@ -49,7 +51,7 @@ class Datastreams(db.Model):
                 "sensor": "Sensor@iot.navigationLink",
                 "name": "name",
                 "description": "description",
-                "unitofmeasurement": "unitOfMeasurement"
+                "unitofmeasurement": "unitOfMeasurement",
             }
 
             new_result = {}
@@ -60,7 +62,6 @@ class Datastreams(db.Model):
 
         return datadict
 
-
     @classmethod
     def to_expanded_thing_json(cls, data_dict, x):
         """
@@ -70,7 +71,7 @@ class Datastreams(db.Model):
         data_dict["Thing"] = {
             "@iot.id": x.thing_id,
             "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Things({x.thing_id})",
-            "link": x.th_link
+            "link": x.th_link,
         }
         return data_dict
 
@@ -79,12 +80,13 @@ class Datastreams(db.Model):
         """
         returns Observations json with FeatreOfInterest expanded as its own json object
         """
+        print(data_dict)
         del data_dict["Sensor@iot.navigationLink"]
         if x.sensor_id:
             data_dict["Sensor"] = {
-                "@iot.id": x.featureofinterest_id,
-                "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Sensor({x.featureofinterest_id})",
-                "link": x.ss_name
+                "@iot.id": x.sensor_id,
+                "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Sensor({x.sensor_id})",
+                "link": x.ss_link,
             }
         else:
             data_dict["Sensor"] = None
@@ -97,10 +99,12 @@ class Datastreams(db.Model):
         """
         result = Datastreams.to_selected_json(x, selects)
 
-        #if selects:
-        select_thing = True if (selects is not None and "thing" in selects) else False
-        select_sensor = True if (selects is not None and "sensor" in selects) else False
-
+        if selects is None:
+            select_thing = True
+            select_sensor = True
+        else:
+            select_thing = True if ("thing" in selects) else False
+            select_sensor = True if ("sensor" in selects) else False
 
         if (expand_code == 1 or expand_code == 3) and select_thing:
             result = Datastreams.to_expanded_thing_json(result, x)
@@ -136,6 +140,7 @@ class Datastreams(db.Model):
         if url_string == "?":
             url_string == ""
 
+        logging.debug(url_string)
         return url_string
 
     @classmethod
@@ -149,9 +154,7 @@ class Datastreams(db.Model):
             query = base_query.limit(top).offset(skip)
         elif expand_code == 1:
             query = (
-                base_query.join(
-                    Things, Datastreams.thing_id == Things.id
-                )
+                base_query.join(Things, Datastreams.thing_id == Things.id)
                 .add_columns(
                     Datastreams.id,
                     Datastreams.name,
@@ -159,12 +162,13 @@ class Datastreams(db.Model):
                     Datastreams.unitofmeasurement,
                     Datastreams.thing_id,
                     Datastreams.sensor_id,
-                    Things.link.label("th_link")
+                    Things.link.label("th_link"),
                 )
                 .limit(top)
                 .offset(skip)
             )
         elif expand_code == 2:
+            print("get ss code")
             query = (
                 base_query.join(
                     Sensors,
@@ -177,16 +181,14 @@ class Datastreams(db.Model):
                     Datastreams.unitofmeasurement,
                     Datastreams.thing_id,
                     Datastreams.sensor_id,
-                    Sensors.link.label("ss_link")
+                    Sensors.link.label("ss_link"),
                 )
                 .limit(top)
                 .offset(skip)
             )
         elif expand_code == 3:
             query = (
-                base_query.join(
-                    Things, Datastreams.thing_id == Things.id
-                )
+                base_query.join(Things, Datastreams.thing_id == Things.id)
                 .join(
                     Sensors,
                     Datastreams.sensor_id == Sensors.id,
@@ -210,15 +212,17 @@ class Datastreams(db.Model):
     @classmethod
     def filter_by_id(cls, id):
 
-        FoI_list = []
-        if id:
-            FoI_list = Datastreams.query.filter(Datastreams.id == id)
+        if expand_code != -1:
+            result = Datastreams.get_expanded_query(
+                Datastreams.query.filter(Datastreams.id == id),
+                1,
+                0,
+                expand_code,
+            ).one()
 
-        if FoI_list.count() == 0:
-            result = None
+            result = Datastreams.expand_to_selected_json(result, expand_code, selects)
         else:
-            result = {f"Datastream_{id}": Datastreams.to_json(FoI_list[0])}
-
+            result = {"error": "unrecognized expand options"}
         return result
 
     @classmethod
@@ -260,7 +264,9 @@ class Datastreams(db.Model):
                 "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams{Datastreams.get_nextlink_queryparams(top, skip, expand_code)}",
                 "value": list(
                     map(
-                        lambda x: Datastreams.expand_to_selected_json(x, expand_code, selects),
+                        lambda x: Datastreams.expand_to_selected_json(
+                            x, expand_code, selects
+                        ),
                         Datastreams.get_expanded_query(
                             Datastreams.query, top, skip, expand_code
                         ).all(),

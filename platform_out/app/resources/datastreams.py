@@ -4,7 +4,7 @@ from app.models.datastreams import Datastreams
 import logging
 from app.resources.parser import ArgParser
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 datastreams_blueprint = Blueprint("datastream", __name__)
 api = Api(datastreams_blueprint)
@@ -26,7 +26,7 @@ def parse_args(query_parameters):
             expand_type_list.remove("thing")
         if "sensor" in expand_type_list:
             expand_code += 2
-            expand_type_list.remove("thing")
+            expand_type_list.remove("sensor")
         if len(expand_type_list) != 0:
             expand_code = -1
 
@@ -104,7 +104,8 @@ class DSbyID(Resource):
         query data streams by Datastream Id
         """
         try:
-            datastream_entity = Datastreams.filter_by_id(ds_id)
+            top, skip, expand_code, selects = parse_args(request.args)
+            obs = Datastreams.filter_by_id(id, expand_code, selects)
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}
@@ -123,8 +124,7 @@ class DSbyID(Resource):
             return response
 
 
-# api.add_resource(DSbyID, "/OGCSensorThings/v1.0/Datastreams(<int:ds_id>)")
-api.add_resource(DSbyID, "/Datastreams/<int:ds_id>")
+api.add_resource(DSbyID, "/Datastreams(<int:ds_id>)")
 
 
 class DSList(Resource):
