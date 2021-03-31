@@ -194,82 +194,39 @@ class Observations(db.Model):
         applies limit() and offset() with top and skip paremeters
         """
         query = None
-        if expand_code == 0:
+        if expand_code >= 0:
+            base_query = base_query.add_columns(
+                Observations.id,
+                Observations.result,
+                Observations.resulttime,
+                Observations.phenomenontime_begin,
+                Observations.phenomenontime_end,
+                Observations.featureofinterest_id,
+                Observations.datastream_id,
+            )
+
+            if expand_code == 1 or expand_code == 3:
+                base_query = base_query.join(
+                    Datastreams, Observations.datastream_id == Datastreams.id
+                ).add_columns(
+                    Datastreams.unitofmeasurement.label("ds_unitofmeasurement"),
+                    Datastreams.name.label("ds_name"),
+                    Datastreams.description.label("ds_description"),
+                    Datastreams.thing_id.label("ds_thing_id"),
+                    Datastreams.sensor_id.label("ds_sensor_id"),
+                )
+            if expand_code == 2 or expand_code == 3:
+                base_query = base_query.outerjoin(
+                    FeaturesofInterest,
+                    Observations.featureofinterest_id == FeaturesofInterest.id,
+                ).add_columns(
+                    FeaturesofInterest.name.label("foi_name"),
+                    FeaturesofInterest.description.label("foi_description"),
+                    FeaturesofInterest.feature.label("foi_feature"),
+                    FeaturesofInterest.encodingtype.label("foi_encodingtype"),
+                )
+
             query = base_query.limit(top).offset(skip)
-        elif expand_code == 1:
-            query = (
-                base_query.join(
-                    Datastreams, Observations.datastream_id == Datastreams.id
-                )
-                .add_columns(
-                    Observations.id,
-                    Observations.result,
-                    Observations.resulttime,
-                    Observations.phenomenontime_begin,
-                    Observations.phenomenontime_end,
-                    Observations.featureofinterest_id,
-                    Observations.datastream_id,
-                    Datastreams.unitofmeasurement.label("ds_unitofmeasurement"),
-                    Datastreams.name.label("ds_name"),
-                    Datastreams.description.label("ds_description"),
-                    Datastreams.thing_id.label("ds_thing_id"),
-                    Datastreams.sensor_id.label("ds_sensor_id"),
-                )
-                .limit(top)
-                .offset(skip)
-            )
-        elif expand_code == 2:
-            query = (
-                base_query.outerjoin(
-                    FeaturesofInterest,
-                    Observations.featureofinterest_id == FeaturesofInterest.id,
-                )
-                .add_columns(
-                    Observations.id,
-                    Observations.result,
-                    Observations.resulttime,
-                    Observations.phenomenontime_begin,
-                    Observations.phenomenontime_end,
-                    Observations.featureofinterest_id,
-                    Observations.datastream_id,
-                    FeaturesofInterest.name.label("foi_name"),
-                    FeaturesofInterest.description.label("foi_description"),
-                    FeaturesofInterest.feature.label("foi_feature"),
-                    FeaturesofInterest.encodingtype.label("foi_encodingtype"),
-                )
-                .limit(top)
-                .offset(skip)
-            )
-        elif expand_code == 3:
-            query = (
-                base_query.join(
-                    Datastreams, Observations.datastream_id == Datastreams.id
-                )
-                .outerjoin(
-                    FeaturesofInterest,
-                    Observations.featureofinterest_id == FeaturesofInterest.id,
-                )
-                .add_columns(
-                    Observations.id,
-                    Observations.result,
-                    Observations.resulttime,
-                    Observations.phenomenontime_begin,
-                    Observations.phenomenontime_end,
-                    Observations.datastream_id,
-                    Datastreams.unitofmeasurement.label("ds_unitofmeasurement"),
-                    Datastreams.name.label("ds_name"),
-                    Datastreams.description.label("ds_description"),
-                    Datastreams.thing_id.label("ds_thing_id"),
-                    Datastreams.sensor_id.label("ds_sensor_id"),
-                    Observations.featureofinterest_id,
-                    FeaturesofInterest.name.label("foi_name"),
-                    FeaturesofInterest.description.label("foi_description"),
-                    FeaturesofInterest.feature.label("foi_feature"),
-                    FeaturesofInterest.encodingtype.label("foi_encodingtype"),
-                )
-                .limit(top)
-                .offset(skip)
-            )
 
         return query
 
@@ -293,11 +250,7 @@ class Observations(db.Model):
                 expand_code,
             ).one()
 
-            obs = Observations.expand_to_selected_json(
-                result,
-                expand_code,
-                selects)
-
+            obs = Observations.expand_to_selected_json(result, expand_code, selects)
 
         else:
             obs = {"error": "unrecognized expand options"}
@@ -317,7 +270,9 @@ class Observations(db.Model):
                 "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams({id})/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code)}",
                 "value": list(
                     map(
-                        lambda x: Observations.expand_to_selected_json(x, expand_code, selects),
+                        lambda x: Observations.expand_to_selected_json(
+                            x, expand_code, selects
+                        ),
                         Observations.get_expanded_query(
                             Observations.query.filter(Observations.datastream_id == id),
                             top,
@@ -346,7 +301,9 @@ class Observations(db.Model):
                 "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code)}",
                 "value": list(
                     map(
-                        lambda x: Observations.expand_to_selected_json(x, expand_code, selects),
+                        lambda x: Observations.expand_to_selected_json(
+                            x, expand_code, selects
+                        ),
                         Observations.get_expanded_query(
                             Observations.query, top, skip, expand_code
                         ).all(),

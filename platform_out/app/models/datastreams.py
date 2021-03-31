@@ -7,6 +7,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
+
 class Datastreams(db.Model):
     __tablename__ = "datastream"
     id = db.Column(db.Integer, primary_key=True)
@@ -80,7 +81,6 @@ class Datastreams(db.Model):
         """
         returns Observations json with FeatreOfInterest expanded as its own json object
         """
-        print(data_dict)
         del data_dict["Sensor@iot.navigationLink"]
         if x.sensor_id:
             data_dict["Sensor"] = {
@@ -150,62 +150,26 @@ class Datastreams(db.Model):
         applies limit() and offset() with top and skip paremeters
         """
         query = None
-        if expand_code == 0:
+        if expand_code >= 0:
+            base_query = base_query.add_columns(
+                Datastreams.id,
+                Datastreams.name,
+                Datastreams.description,
+                Datastreams.unitofmeasurement,
+                Datastreams.thing_id,
+                Datastreams.sensor_id,
+            )
+
+            if expand_code == 1 or expand_code == 3:
+                base_query = base_query.join(
+                    Things, Datastreams.thing_id == Things.id
+                ).add_columns(Things.link.label("th_link"))
+            if expand_code == 2 or expand_code == 3:
+                base_query = base_query.join(
+                    Sensors, Datastreams.sensor_id == Sensors.id
+                ).add_columns(Sensors.link.label("ss_link"))
+
             query = base_query.limit(top).offset(skip)
-        elif expand_code == 1:
-            query = (
-                base_query.join(Things, Datastreams.thing_id == Things.id)
-                .add_columns(
-                    Datastreams.id,
-                    Datastreams.name,
-                    Datastreams.description,
-                    Datastreams.unitofmeasurement,
-                    Datastreams.thing_id,
-                    Datastreams.sensor_id,
-                    Things.link.label("th_link"),
-                )
-                .limit(top)
-                .offset(skip)
-            )
-        elif expand_code == 2:
-            print("get ss code")
-            query = (
-                base_query.join(
-                    Sensors,
-                    Datastreams.sensor_id == Sensors.id,
-                )
-                .add_columns(
-                    Datastreams.id,
-                    Datastreams.name,
-                    Datastreams.description,
-                    Datastreams.unitofmeasurement,
-                    Datastreams.thing_id,
-                    Datastreams.sensor_id,
-                    Sensors.link.label("ss_link"),
-                )
-                .limit(top)
-                .offset(skip)
-            )
-        elif expand_code == 3:
-            query = (
-                base_query.join(Things, Datastreams.thing_id == Things.id)
-                .join(
-                    Sensors,
-                    Datastreams.sensor_id == Sensors.id,
-                )
-                .add_columns(
-                    Datastreams.id,
-                    Datastreams.name,
-                    Datastreams.description,
-                    Datastreams.unitofmeasurement,
-                    Datastreams.thing_id,
-                    Datastreams.sensor_id,
-                    Things.link.label("th_link"),
-                    Sensors.link.label("ss_link"),
-                )
-                .limit(top)
-                .offset(skip)
-            )
 
         return query
 
