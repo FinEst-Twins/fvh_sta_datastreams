@@ -239,7 +239,7 @@ class Observations(db.Model):
         obs_list = []
         if id:
             obs_list = Observations.query.filter(Observations.id == id)
-
+            #fix
         if obs_list.count() == 0:
             result = None
         elif expand_code != -1:

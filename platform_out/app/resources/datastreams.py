@@ -105,7 +105,7 @@ class DSbyID(Resource):
         """
         try:
             top, skip, expand_code, selects = parse_args(request.args)
-            obs = Datastreams.filter_by_id(id, expand_code, selects)
+            datastream_entity = Datastreams.filter_by_id(ds_id, expand_code, selects)
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}

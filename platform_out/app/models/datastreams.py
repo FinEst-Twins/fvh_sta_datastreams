@@ -174,7 +174,7 @@ class Datastreams(db.Model):
         return query
 
     @classmethod
-    def filter_by_id(cls, id):
+    def filter_by_id(cls, id, expand_code, selects):
 
         if expand_code != -1:
             result = Datastreams.get_expanded_query(
