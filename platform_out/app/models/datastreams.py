@@ -182,9 +182,14 @@ class Datastreams(db.Model):
                 1,
                 0,
                 expand_code,
-            ).one()
+            ).first()
 
-            result = Datastreams.expand_to_selected_json(result, expand_code, selects)
+            if result is None:
+                result = {"message": "No Datastream with given Id found"}
+            else:
+                result = Datastreams.expand_to_selected_json(
+                    result, expand_code, selects
+                )
         else:
             result = {"error": "unrecognized expand options"}
         return result
@@ -212,6 +217,36 @@ class Datastreams(db.Model):
         return {
             "Datastreams": list(map(lambda x: Datastreams.to_json(x), datastream_list))
         }
+
+    @classmethod
+    def filter_by_thing_id(cls, id, top, skip, expand_code, selects):
+        """
+        applies query to filter Observations by datastream id
+        """
+        count = Datastreams.query.filter(Datastreams.thing_id == id).count()
+        if count == 0:
+            obs_list = {"@iot.count": count}
+        elif expand_code != -1:
+            obs_list = {
+                "@iot.count": count,
+                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Things({id})/Datastreams{Datastreams.get_nextlink_queryparams(top, skip, expand_code)}",
+                "value": list(
+                    map(
+                        lambda x: Datastreams.expand_to_selected_json(
+                            x, expand_code, selects
+                        ),
+                        Datastreams.get_expanded_query(
+                            Datastreams.query.filter(Datastreams.thing_id == id),
+                            top,
+                            skip,
+                            expand_code,
+                        ).all(),
+                    )
+                ),
+            }
+        else:
+            obs_list = {"error": "unrecognized expand options"}
+        return obs_list
 
     @classmethod
     def return_page_with_expand(cls, top, skip, expand_code, selects):

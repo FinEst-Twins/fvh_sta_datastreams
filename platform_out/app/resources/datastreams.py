@@ -106,25 +106,43 @@ class DSbyID(Resource):
         try:
             top, skip, expand_code, selects = parse_args(request.args)
             datastream_entity = Datastreams.filter_by_id(ds_id, expand_code, selects)
+            response = jsonify(datastream_entity)
+            response.status_code = 200
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}
             response = jsonify(result)
-            response.status_code = 400
-            return response
-
-        if datastream_entity:
-            response = jsonify(datastream_entity)
-            response.status_code = 200
-            return response
-        else:
-            result = {"message": "No Datastream with given Id found"}
-            response = jsonify(result)
-            response.status_code = 200
+        finally:
             return response
 
 
 api.add_resource(DSbyID, "/Datastreams(<int:ds_id>)")
+
+
+class DatastreamsbyThingsId(Resource):
+    def get(self, id):
+        """
+        query observations by datastream id
+        """
+        try:
+            top, skip, expand_code, selects = parse_args(request.args)
+
+            ds_list = Datastreams.filter_by_thing_id(
+                id, top, skip, expand_code, selects
+            )
+            response = jsonify(ds_list)
+            response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            response = jsonify({"message": "error"})
+            response.status_code = 400
+            return response
+
+        finally:
+            return response
+
+
+api.add_resource(DatastreamsbyThingsId, "/Things(<int:id>)/Datastreams")
 
 
 class DSList(Resource):
@@ -135,22 +153,17 @@ class DSList(Resource):
         """
         try:
             top, skip, expand_code, selects = parse_args(request.args)
-            ds_list = Datastreams.return_page_with_expand(top, skip, expand_code, selects)
-        except Exception as e:
-            logging.warning(e)
-            result = {"message": "error"}
-            response = jsonify(result)
-            response.status_code = 400
-            return response
-
-        if ds_list:
+            ds_list = Datastreams.return_page_with_expand(
+                top, skip, expand_code, selects
+            )
             response = jsonify(ds_list)
             response.status_code = 200
-            return response
-        else:
-            result = {"message": "No Datastreams Found"}
-            response = jsonify(result)
-            response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            response = jsonify({"message": "error"})
+            response.status_code = 400
+
+        finally:
             return response
 
 

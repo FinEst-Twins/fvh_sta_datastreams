@@ -13,7 +13,7 @@ api = Api(observations_blueprint)
 def parse_args(query_parameters):
 
     top, skip, expand, select = ArgParser.get_args()
-    print(top,skip,expand,select)
+    print(top, skip, expand, select)
 
     expand_type_list = []
     expand_code = 0
@@ -62,22 +62,16 @@ class Observation(Resource):
         try:
             top, skip, expand_code, selects = parse_args(request.args)
             obs = Observations.filter_by_id(id, expand_code, selects)
+            response = jsonify(obs)
+            response.status_code = 200
 
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}
             response = jsonify(result)
             response.status_code = 400
-            return response
 
-        if obs:
-            response = jsonify(obs)
-            response.status_code = 200
-            return response
-        else:
-            result = {"message": "No Observation with given Id found"}
-            response = jsonify(result)
-            response.status_code = 200
+        finally:
             return response
 
 
@@ -92,28 +86,22 @@ class ObservationbyDSId(Resource):
         try:
             top, skip, expand_code, selects = parse_args(request.args)
 
-            obs = Observations.filter_by_datastream_id(id, top, skip, expand_code, selects)
-        except Exception as e:
-            logging.warning(e)
-            result = {"message": "error"}
-            response = jsonify(result)
-            response.status_code = 400
-            return response
-
-        if obs:
+            obs = Observations.filter_by_datastream_id(
+                id, top, skip, expand_code, selects
+            )
             response = jsonify(obs)
             response.status_code = 200
-            return response
-        else:
-            result = {"message": "No Observation found for given datastream"}
-            response = jsonify(result)
-            response.status_code = 200
+
+        except Exception as e:
+            logging.warning(e)
+            response = jsonify({"message": "error"})
+            response.status_code = 400
+
+        finally:
             return response
 
 
-api.add_resource(
-    ObservationbyDSId, "/Datastreams(<int:id>)/Observations"
-)
+api.add_resource(ObservationbyDSId, "/Datastreams(<int:id>)/Observations")
 
 
 class ObservationsList(Resource):
@@ -123,22 +111,18 @@ class ObservationsList(Resource):
         """
         try:
             top, skip, expand_code, selects = parse_args(request.args)
-            obs_list = Observations.return_page_with_expand(top, skip, expand_code, selects)
+            obs_list = Observations.return_page_with_expand(
+                top, skip, expand_code, selects
+            )
+            response = jsonify(obs_list)
+            response.status_code = 200
         except Exception as e:
             logging.warning(e)
-            result = {"message": "error"}
-            response = jsonify(result)
+            response = jsonify({"message": "error"})
             response.status_code = 400
             return response
 
-        if obs_list:
-            response = jsonify(obs_list)
-            response.status_code = 200
-            return response
-        else:
-            result = {"message": "No Observations found"}
-            response = jsonify(result)
-            response.status_code = 200
+        finally:
             return response
 
 

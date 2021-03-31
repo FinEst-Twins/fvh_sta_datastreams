@@ -235,26 +235,23 @@ class Observations(db.Model):
         """
         applies query to filter Observations by Observation id
         """
-
-        obs_list = []
-        if id:
-            obs_list = Observations.query.filter(Observations.id == id)
-            #fix
-        if obs_list.count() == 0:
-            result = None
-        elif expand_code != -1:
+        if expand_code != -1:
             result = Observations.get_expanded_query(
                 Observations.query.filter(Observations.id == id),
                 1,
                 0,
                 expand_code,
-            ).one()
+            ).first()
 
-            obs = Observations.expand_to_selected_json(result, expand_code, selects)
-
+            if result is None:
+                result = {"message": "No Observations with given Id found"}
+            else:
+                result = Observations.expand_to_selected_json(
+                    result, expand_code, selects
+                )
         else:
-            obs = {"error": "unrecognized expand options"}
-        return obs
+            result = {"error": "unrecognized expand options"}
+        return result
 
     @classmethod
     def filter_by_datastream_id(cls, id, top, skip, expand_code, selects):
