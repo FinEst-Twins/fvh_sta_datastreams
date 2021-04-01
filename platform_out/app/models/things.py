@@ -14,14 +14,14 @@ class Things(db.Model):
         }
 
     @classmethod
-    def filter_by_id(cls, id):
+    def filter_by_id(cls, id, expand_code, selects):
 
         FoI_list = []
         if id:
             FoI_list = Things.query.filter(Things.id == id)
 
         if FoI_list.count() == 0:
-            result = None
+            result = {"message":"No Things found with given Id"}
         else:
             result = {f"Thing {id}": Things.to_json(FoI_list[0])}
 

@@ -32,6 +32,12 @@ def create_app(script_info=None):
     from app.resources.observations import observations_blueprint
     app.register_blueprint(observations_blueprint)
 
+    from app.resources.things import things_blueprint
+    app.register_blueprint(things_blueprint)
+
+    from app.resources.sensors import sensors_blueprint
+    app.register_blueprint(sensors_blueprint)
+
     # shell context for flask cli
     @app.shell_context_processor
     def ctx():
