@@ -3,6 +3,7 @@ from flask_restful import Resource, Api
 from app.models.observations import Observations
 import logging
 from app.resources.parser import ArgParser
+from flask import current_app
 
 logging.basicConfig(level=logging.INFO)
 
@@ -52,6 +53,51 @@ def parse_args(query_parameters):
         selects = None
 
     return top, skip, expand_code, selects
+
+
+class BaseResources(Resource):
+    def get(self):
+        base_urls = {
+            "value": [
+                {
+                    "name": "Things",
+                    "url": f"{current_app.config['HOSTED_URL']}/Things",
+                },
+                # {
+                #     "name": "Locations",
+                #     "url": "https://toronto-bike-snapshot.sensorup.com/v1.0/Locations",
+                # },
+                # {
+                #     "name": "HistoricalLocations",
+                #     "url": "https://toronto-bike-snapshot.sensorup.com/v1.0/HistoricalLocations",
+                # },
+                {
+                    "name": "Datastreams",
+                    "url": f"{current_app.config['HOSTED_URL']}/Datastreams",
+                },
+                {
+                    "name": "Sensors",
+                    "url": f"{current_app.config['HOSTED_URL']}/Sensors",
+                },
+                {
+                    "name": "Observations",
+                    "url": f"{current_app.config['HOSTED_URL']}/Observations",
+                },
+                # {
+                #     "name": "ObservedProperties",
+                #     "url": "https://toronto-bike-snapshot.sensorup.com/v1.0/ObservedProperties",
+                # },
+                {
+                    "name": "FeaturesOfInterest",
+                    "url": f"{current_app.config['HOSTED_URL']}/FeaturesOfInterest",
+                },
+            ]
+        }
+
+        return jsonify(base_urls)
+
+
+api.add_resource(BaseResources, "/")
 
 
 class Observation(Resource):
