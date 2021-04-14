@@ -226,7 +226,7 @@ class Observations(db.Model):
                     FeaturesofInterest.encodingtype.label("foi_encodingtype"),
                 )
 
-            query = base_query.limit(top).offset(skip)
+            query = base_query.order_by(Observations.resulttime.asc()).limit(top).offset(skip)
 
         return query
 
