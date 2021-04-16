@@ -18,24 +18,20 @@ def parse_args(query_parameters):
     expand_type_list = []
     expand_code = 0
     if expand:
-        expand_type_list = list(set(expand.lower().split(",")))
-        if len(expand_type_list) == 0:
-            expand_code = -1
-        if "datastream" in expand_type_list:
-            expand_code += 1
-            expand_type_list.remove("datastream")
-        if len(expand_type_list) != 0:
-            expand_code = -1
+        # expand_type_list = list(set(expand.lower().split(",")))
+        # if len(expand_type_list) == 0:
+        #     expand_code = -1
+        # if "datastream" in expand_type_list:
+        #     expand_code += 1
+        #     expand_type_list.remove("datastream")
+        # if len(expand_type_list) != 0:
+        expand_code = -1
 
     selects = set()
     allowed_selects = set(
         [
             "name",
-            "description",
-            "unitofmeasurement",
-            "thing",
-            "sensor",
-            "observation",
+            "description"
         ]
     )
 
@@ -80,10 +76,10 @@ class ThingList(Resource):
         """
         try:
             top, skip, expand_code, selects = parse_args(request.args)
-            ds_list = Things.return_page_with_expand(
+            thing_list = Things.return_page_with_expand(
                 top, skip, expand_code, selects
             )
-            response = jsonify(ds_list)
+            response = jsonify(thing_list)
             response.status_code = 200
         except Exception as e:
             logging.warning(e)
