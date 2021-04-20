@@ -1,6 +1,8 @@
 from app import db
 from flask import current_app
+import logging
 
+logging.basicConfig(level=logging.DEBUG)
 
 class Sensors(db.Model):
     __tablename__ = "sensor"
@@ -37,16 +39,25 @@ class Sensors(db.Model):
     @classmethod
     def filter_by_id(cls, id, expand_code, selects):
 
-        FoI_list = []
+        sensor_list = []
         if id:
-            FoI_list = Sensors.query.filter(Sensors.id == id)
+            sensor_list = Sensors.query.filter(Sensors.id == id)
 
-        if FoI_list.count() == 0:
+
+        if sensor_list.count() == 0:
             result = {"message":"No Sensors found with given Id"}
         else:
-            result = Sensors.to_selected_json(FoI_list[0])
+            result = Sensors.to_selected_json(sensor_list[0], selects)
 
         return result
+
+    @classmethod
+    def add_item(cls, name, description):
+
+        sensor = Sensors(name=name, description=description)
+        db.session.add(sensor)
+        db.session.commit()
+        return {"created id" : sensor.id}
 
     @classmethod
     def return_page_with_expand(cls, top, skip, expand_code, selects):

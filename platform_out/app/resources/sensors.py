@@ -18,14 +18,14 @@ def parse_args(query_parameters):
     expand_type_list = []
     expand_code = 0
     if expand:
-        expand_type_list = list(set(expand.lower().split(",")))
-        if len(expand_type_list) == 0:
-            expand_code = -1
-        if "datastream" in expand_type_list:
-            expand_code += 1
-            expand_type_list.remove("datastream")
-        if len(expand_type_list) != 0:
-            expand_code = -1
+        # expand_type_list = list(set(expand.lower().split(",")))
+        # if len(expand_type_list) == 0:
+        #     expand_code = -1
+        # if "datastream" in expand_type_list:
+        #     expand_code += 1
+        #     expand_type_list.remove("datastream")
+        # if len(expand_type_list) != 0:
+        expand_code = -1
 
     selects = set()
     allowed_selects = set(
@@ -71,7 +71,7 @@ api.add_resource(SensorByID, "/Sensors(<int:id>)")
 class SensorList(Resource):
     def get(self):
         """
-        query data streams
+        query sensors
         #TODO pagination
         """
         try:
@@ -89,5 +89,26 @@ class SensorList(Resource):
         finally:
             return response
 
+    def post(self):
+        """
+        post new sensor
+        """
+        try:
+            data = request.get_json() or {}
+            if 'name' not in data.keys() and 'description' not in data.keys() :
+                result = {"message": "error - must include name or description fields"}
+                response = jsonify(result)
+                response.status_code = 200
+            else:
+                result = Sensors.add_item(data["name"], data["description"])
+                response = jsonify(result)
+                response.status_code = 201
+        except Exception as e:
+            logging.warning(e)
+            result = {"message": "error"}
+            response.status_code = 400
+            response = jsonify(result)
+        finally:
+            return response
 
 api.add_resource(SensorList, "/Sensors")

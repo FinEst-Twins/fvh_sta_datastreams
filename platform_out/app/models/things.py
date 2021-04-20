@@ -72,3 +72,11 @@ class Things(db.Model):
             thing_list = {"error": "unrecognized expand options"}
 
         return thing_list
+
+    @classmethod
+    def add_item(cls, name, description):
+
+        thing = Things(name=name, description=description)
+        db.session.add(thing)
+        db.session.commit()
+        return {"created id" : thing.id}

@@ -90,4 +90,27 @@ class ThingList(Resource):
             return response
 
 
+    def post(self):
+        """
+        post new sensor
+        """
+        try:
+            data = request.get_json() or {}
+            if 'name' not in data.keys() and 'description' not in data.keys() :
+                result = {"message": "error - must include name or description fields"}
+                response = jsonify(result)
+                response.status_code = 200
+            else:
+                result = Things.add_item(data["name"], data["description"])
+                response = jsonify(result)
+                response.status_code = 201
+        except Exception as e:
+            logging.warning(e)
+            result = {"message": "error"}
+            response.status_code = 400
+            response = jsonify(result)
+        finally:
+            return response
+
+
 api.add_resource(ThingList, "/Things")
