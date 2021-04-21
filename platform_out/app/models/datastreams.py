@@ -276,3 +276,17 @@ class Datastreams(db.Model):
             ds_list = {"error": "unrecognized expand options"}
 
         return ds_list
+
+    @classmethod
+    def add_item(cls, name, description, unitofmeasurement, thing_id, sensor_id):
+
+        ds = Datastreams(
+            name=name,
+            description=description,
+            unitofmeasurement=unitofmeasurement,
+            thing_id=int(thing_id),
+            sensor_id=int(sensor_id),
+        )
+        db.session.add(ds)
+        db.session.commit()
+        return {"created id": ds.id}

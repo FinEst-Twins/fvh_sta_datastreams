@@ -1,6 +1,7 @@
 from app import db
 from sqlalchemy import and_
 import json
+from flask import current_app
 
 
 class FeaturesofInterest(db.Model):
@@ -17,12 +18,13 @@ class FeaturesofInterest(db.Model):
     @classmethod
     def to_json(cls, x):
         result = {
+            "@iot.id": x.id,
+            "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/FeaturesOfInterest({x.id})",
             "name": x.name,
             "description": x.description,
             "encodingtype": x.encodingtype,
-            "feature": x.feature,
+            "feature": json.loads(x.feature),
         }
-        result["feature"] = json.loads(result["feature"])
         return result
 
     @classmethod
@@ -46,8 +48,7 @@ class FeaturesofInterest(db.Model):
         if FoI_list.count() == 0:
             result = None
         else:
-            result = {
-                f"Feature_Of_Interest_{id}": FeaturesofInterest.to_json(FoI_list[0])
-            }
+            result = FeaturesofInterest.to_json(FoI_list[0])
+
 
         return result

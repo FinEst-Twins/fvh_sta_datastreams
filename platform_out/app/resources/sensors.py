@@ -106,8 +106,8 @@ class SensorList(Resource):
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}
-            response.status_code = 400
             response = jsonify(result)
+            response.status_code = 400
         finally:
             return response
 

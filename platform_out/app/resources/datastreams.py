@@ -166,5 +166,43 @@ class DSList(Resource):
         finally:
             return response
 
+    def post(self):
+        """
+        post new sensor
+        """
+        try:
+            data = request.get_json() or {}
+
+            if (
+                "unitofmeasurement" not in data.keys()
+                or "thing_id" not in data.keys()
+                or "sensor_id" not in data.keys()
+                or "name" not in data.keys()
+                or "description" not in data.keys()
+            ):
+                result = {
+                    "message": "error - must include name, description, unit of measurement, thing_id(int) and sensor_id(int) fields"
+                }
+                response = jsonify(result)
+                response.status_code = 200
+            else:
+                result = Datastreams.add_item(
+                    data["name"],
+                    data["description"],
+                    data["unitofmeasurement"],
+                    data["thing_id"],
+                    data["sensor_id"],
+                )
+                response = jsonify(result)
+                response.status_code = 201
+        except Exception as e:
+            logging.warning(e)
+            result = {"message": "error"}
+            response = jsonify(result)
+            response.status_code = 400
+
+        finally:
+            return response
+
 
 api.add_resource(DSList, "/Datastreams")
