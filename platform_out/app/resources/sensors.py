@@ -28,12 +28,7 @@ def parse_args(query_parameters):
         expand_code = -1
 
     selects = set()
-    allowed_selects = set(
-        [
-            "name",
-            "description"
-        ]
-    )
+    allowed_selects = set(["name", "description"])
 
     if select:
         selects = set(select.lower().split(","))
@@ -64,6 +59,44 @@ class SensorByID(Resource):
         finally:
             return response
 
+    def patch(self, id):
+        """
+        post new sensor
+        """
+        try:
+            data = request.get_json() or {}
+            if "name" not in data.keys() and "description" not in data.keys():
+                result = {"message": "error - must include name or description fields"}
+                response = jsonify(result)
+                response.status_code = 200
+            else:
+                result = Sensors.update_item(id, data["name"], data["description"])
+                response = jsonify(result)
+                response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            result = {"message": "error"}
+            response = jsonify(result)
+            response.status_code = 400
+        finally:
+            return response
+
+    def delete(self, id):
+        """
+        delete existing sensor
+        """
+        try:
+            result = Sensors.delete_item(id)
+            response = jsonify(result)
+            response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            result = {"message": "error"}
+            response = jsonify(result)
+            response.status_code = 400
+        finally:
+            return response
+
 
 api.add_resource(SensorByID, "/Sensors(<int:id>)")
 
@@ -76,9 +109,7 @@ class SensorList(Resource):
         """
         try:
             top, skip, expand_code, selects = parse_args(request.args)
-            ds_list = Sensors.return_page_with_expand(
-                top, skip, expand_code, selects
-            )
+            ds_list = Sensors.return_page_with_expand(top, skip, expand_code, selects)
             response = jsonify(ds_list)
             response.status_code = 200
         except Exception as e:
@@ -95,7 +126,7 @@ class SensorList(Resource):
         """
         try:
             data = request.get_json() or {}
-            if 'name' not in data.keys() and 'description' not in data.keys() :
+            if "name" not in data.keys() and "description" not in data.keys():
                 result = {"message": "error - must include name or description fields"}
                 response = jsonify(result)
                 response.status_code = 200
@@ -110,5 +141,6 @@ class SensorList(Resource):
             response.status_code = 400
         finally:
             return response
+
 
 api.add_resource(SensorList, "/Sensors")

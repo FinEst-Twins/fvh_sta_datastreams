@@ -2,6 +2,7 @@ from app import db
 from sqlalchemy import and_
 import json
 from flask import current_app
+import logging
 
 
 class FeaturesofInterest(db.Model):
@@ -64,3 +65,40 @@ class FeaturesofInterest(db.Model):
         db.session.add(foi)
         db.session.commit()
         return {"created id": foi.id}
+
+    @classmethod
+    def update_item(cls, id, name, description, encodingtype, feature):
+
+        try:
+            foi = FeaturesofInterest.query.filter(FeaturesofInterest.id == id).first()
+            if foi:
+                foi.name = name
+                foi.description = description
+                foi.encodingtype = encodingtype
+                foi.feature = feature
+                db.session.commit()
+                resp = {"updated id": id}
+            else:
+                resp = {"message": "non existent id"}
+        except Exception as e:
+            logging.warning(e)
+            resp = {"message": "error in update"}
+
+        return resp
+
+    @classmethod
+    def delete_item(cls, id):
+
+        try:
+            foi = FeaturesofInterest.query.filter(FeaturesofInterest.id == id).first()
+            if foi:
+                db.session.delete(foi)
+                db.session.commit()
+                resp = {"deleted id": id}
+            else:
+                resp = {"message": "non existent id"}
+        except Exception as e:
+            logging.warning(e)
+            resp = {"message": "error in update"}
+
+        return resp

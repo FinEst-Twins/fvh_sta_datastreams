@@ -64,6 +64,44 @@ class ThingByID(Resource):
         finally:
             return response
 
+    def patch(self, id):
+        """
+        update sensor
+        """
+        try:
+            data = request.get_json() or {}
+            if "name" not in data.keys() and "description" not in data.keys():
+                result = {"message": "error - must include name or description fields"}
+                response = jsonify(result)
+                response.status_code = 200
+            else:
+                result = Things.update_item(id, data["name"], data["description"])
+                response = jsonify(result)
+                response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            result = {"message": "error"}
+            response = jsonify(result)
+            response.status_code = 400
+        finally:
+            return response
+
+    def delete(self, id):
+        """
+        delete existing sensor
+        """
+        try:
+            result = Things.delete_item(id)
+            response = jsonify(result)
+            response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            result = {"message": "error"}
+            response = jsonify(result)
+            response.status_code = 400
+        finally:
+            return response
+
 
 api.add_resource(ThingByID, "/Things(<int:id>)")
 

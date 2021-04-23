@@ -1,5 +1,6 @@
 from app import db
 from flask import current_app
+import logging
 
 
 class Things(db.Model):
@@ -80,3 +81,37 @@ class Things(db.Model):
         db.session.add(thing)
         db.session.commit()
         return {"created id" : thing.id}
+
+
+    @classmethod
+    def update_item(cls, id, name, description):
+        try:
+            thing = Things.query.filter(Things.id == id).first()
+            if thing:
+                thing.name =name
+                thing.description = description
+                db.session.commit()
+                resp = {"updated id": id}
+            else:
+                resp = {"message": "non existent id"}
+        except Exception as e:
+            logging.warning(e)
+            resp = {"message": "error in update"}
+
+        return resp
+
+    @classmethod
+    def delete_item(cls, id):
+        try:
+            thing = Things.query.filter(Things.id == id).first()
+            if thing:
+                db.session.delete(thing)
+                db.session.commit()
+                resp = {"deleted id": id}
+            else:
+                resp = {"message": "non existent id"}
+        except Exception as e:
+            logging.warning(e)
+            resp = {"message": "error in delete"}
+
+        return resp

@@ -51,13 +51,7 @@ class Sensors(db.Model):
 
         return result
 
-    @classmethod
-    def add_item(cls, name, description):
 
-        sensor = Sensors(name=name, description=description)
-        db.session.add(sensor)
-        db.session.commit()
-        return {"created id" : sensor.id}
 
     @classmethod
     def return_page_with_expand(cls, top, skip, expand_code, selects):
@@ -83,3 +77,44 @@ class Sensors(db.Model):
             sensor_list = {"error": "unrecognized expand options"}
 
         return sensor_list
+
+    @classmethod
+    def add_item(cls, name, description):
+
+        sensor = Sensors(name=name, description=description)
+        db.session.add(sensor)
+        db.session.commit()
+        return {"created id" : sensor.id}
+
+    @classmethod
+    def update_item(cls, id, name, description):
+        try:
+            sensor = Sensors.query.filter(Sensors.id == id).first()
+            if sensor:
+                sensor.name = (name,)
+                sensor.description = description
+                db.session.commit()
+                resp = {"updated id": id}
+            else:
+                resp = {"message": "non existent id"}
+        except Exception as e:
+            logging.warning(e)
+            resp = {"message": "error in update"}
+
+        return resp
+
+    @classmethod
+    def delete_item(cls, id):
+        try:
+            sensor = Sensors.query.filter(Sensors.id == id).first()
+            if sensor:
+                db.session.delete(sensor)
+                db.session.commit()
+                resp = {"deleted id": id}
+            else:
+                resp = {"message": "non existent id"}
+        except Exception as e:
+            logging.warning(e)
+            resp = {"message": "error in delete"}
+
+        return resp

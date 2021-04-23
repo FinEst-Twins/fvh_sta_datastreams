@@ -35,6 +35,61 @@ class FoI(Resource):
             response.status_code = 200
             return response
 
+    def patch(self, foi_id):
+        """
+        update existing feature fo interest
+        """
+        try:
+            data = request.get_json() or {}
+
+            if (
+                "encodingtype" not in data.keys()
+                or "feature" not in data.keys()
+                or "name" not in data.keys()
+                or "description" not in data.keys()
+            ):
+                result = {
+                    "message": "error - must include name, description, encodingtype and feature fields"
+                }
+                response = jsonify(result)
+                response.status_code = 200
+            else:
+                result = FeaturesofInterest.update_item(
+                    foi_id,
+                    data["name"],
+                    data["description"],
+                    data["encodingtype"],
+                    json.dumps(data["feature"]),
+                )
+                response = jsonify(result)
+                response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            result = {"message": "error"}
+            response = jsonify(result)
+            response.status_code = 400
+
+        finally:
+            return response
+
+    def delete(self, foi_id):
+        """
+        delete  foi
+        """
+        try:
+
+            result = FeaturesofInterest.delete_item(foi_id)
+            response = jsonify(result)
+            response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            result = {"message": "error"}
+            response = jsonify(result)
+            response.status_code = 400
+
+        finally:
+            return response
+
 
 api.add_resource(FoI, "//FeaturesOfInterest(<int:foi_id>)")
 

@@ -144,7 +144,7 @@ class DSbyID(Resource):
                     data["sensor_id"],
                 )
                 response = jsonify(result)
-                response.status_code = 201
+                response.status_code = 200
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}
@@ -162,7 +162,7 @@ class DSbyID(Resource):
 
             result = Datastreams.delete_item(ds_id)
             response = jsonify(result)
-            response.status_code = 201
+            response.status_code = 200
         except Exception as e:
             logging.warning(e)
             result = {"message": "error"}

@@ -305,7 +305,8 @@ class Datastreams(db.Model):
                 resp = {"updated id": id}
             else:
                 resp = {"message": "non existent id"}
-        except:
+        except Exception as e:
+            logging.warning(e)
             resp = {"message": "error in update"}
 
         return resp
