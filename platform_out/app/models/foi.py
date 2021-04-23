@@ -50,5 +50,17 @@ class FeaturesofInterest(db.Model):
         else:
             result = FeaturesofInterest.to_json(FoI_list[0])
 
-
         return result
+
+    @classmethod
+    def add_item(cls, name, description, encodingtype, feature):
+
+        foi = FeaturesofInterest(
+            name=name,
+            description=description,
+            encodingtype=encodingtype,
+            feature=feature,
+        )
+        db.session.add(foi)
+        db.session.commit()
+        return {"created id": foi.id}
