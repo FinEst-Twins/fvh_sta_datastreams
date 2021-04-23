@@ -290,3 +290,38 @@ class Datastreams(db.Model):
         db.session.add(ds)
         db.session.commit()
         return {"created id": ds.id}
+
+    @classmethod
+    def update_item(cls, id, name, description, unitofmeasurement, thing_id, sensor_id):
+        try:
+            ds = Datastreams.query.filter(Datastreams.id == id).first()
+            if ds:
+                ds.name = (name,)
+                ds.description = description
+                ds.unitofmeasurement = unitofmeasurement
+                ds.thing_id = int(thing_id)
+                ds.sensor_id = int(sensor_id)
+                db.session.commit()
+                resp = {"updated id": id}
+            else:
+                resp = {"message": "non existent id"}
+        except:
+            resp = {"message": "error in update"}
+
+        return resp
+
+    @classmethod
+    def delete_item(cls, id):
+        try:
+            ds = Datastreams.query.filter(Datastreams.id == id).first()
+            if ds:
+                db.session.delete(ds)
+                db.session.commit()
+                resp = {"deleted id": id}
+            else:
+                resp = {"message": "non existent id"}
+        except Exception as e:
+            logging.warning(e)
+            resp = {"message": "error in delete"}
+
+        return resp
