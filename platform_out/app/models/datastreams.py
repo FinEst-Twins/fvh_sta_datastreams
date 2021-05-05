@@ -72,7 +72,8 @@ class Datastreams(db.Model):
         data_dict["Thing"] = {
             "@iot.id": x.thing_id,
             "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Things({x.thing_id})",
-            "link": x.th_link,
+            "name": x.thingname,
+            "description": x.thingdesc,
         }
         return data_dict
 
@@ -86,7 +87,8 @@ class Datastreams(db.Model):
             data_dict["Sensor"] = {
                 "@iot.id": x.sensor_id,
                 "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Sensor({x.sensor_id})",
-                "link": x.ss_link,
+                "name": x.sensorname,
+                "description": x.sensordesc,
             }
         else:
             data_dict["Sensor"] = None
@@ -163,11 +165,17 @@ class Datastreams(db.Model):
             if expand_code == 1 or expand_code == 3:
                 base_query = base_query.join(
                     Things, Datastreams.thing_id == Things.id
-                ).add_columns(Things.link.label("th_link"))
+                ).add_columns(
+                    Things.name.label("thingname"),
+                    Things.description.label("thingdesc"),
+                )
             if expand_code == 2 or expand_code == 3:
                 base_query = base_query.join(
                     Sensors, Datastreams.sensor_id == Sensors.id
-                ).add_columns(Sensors.link.label("ss_link"))
+                ).add_columns(
+                    Sensors.name.label("sensorname"),
+                    Sensors.description.label("sensordesc"),
+                )
 
             query = base_query.limit(top).offset(skip)
 
