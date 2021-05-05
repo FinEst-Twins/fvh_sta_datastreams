@@ -7,9 +7,15 @@ services:
         context: ./platform_out/
         dockerfile: Dockerfile.prod
     entrypoint: ['/project/entrypoint.sh']
-    command: gunicorn --bind 0.0.0.0:5000 manage:app
+    #command: gunicorn --bind 0.0.0.0:5000 --log-level=debug manage:app
+    command: gunicorn --bind 0.0.0.0:5000 --workers 2 --threads 4 --worker-class=gthread --worker-tmp-dir /dev/shm --timeout 3600  manage:app
     expose:
       - 5000
+    mem_limit: 3.5g
+    mem_reservation: 3g
+    cpus: 1.5
+    ports:
+      - 5000:5000
     env_file:
       - config.env
     environment:

@@ -33,6 +33,6 @@ USER appuser
 # RUN pip install flake8
 # COPY . .
 # RUN flake8 --ignore=E501,F401 .
-CMD gunicorn --bind 0.0.0.0:5000 manage:app
+#CMD gunicorn --bind 0.0.0.0:5000 --workers=2 --threads=4 --worker-class=gthread --worker-tmp-dir /dev/shm manage:app
 
 

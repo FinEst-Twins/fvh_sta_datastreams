@@ -13,7 +13,6 @@ api = Api(sensors_blueprint)
 def parse_args(query_parameters):
 
     top, skip, expand, select = ArgParser.get_args()
-    print(top, skip, expand, select)
 
     expand_type_list = []
     expand_code = 0

@@ -6,6 +6,8 @@ from app.models.datastreams import Datastreams
 from app.models.foi import FeaturesofInterest
 import json
 import datetime
+from sqlalchemy import cast, Float
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 
@@ -58,6 +60,20 @@ class Observations(db.Model):
             "Datastream@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/Datastream",
             "FeatureOfInterest@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/FeatureOfInterest",
         }
+
+    @classmethod
+    def to_dataarray(cls, x):
+        """
+        returns observations in json format
+        """
+        return [
+            x.id,
+            x.phenomenontime_begin.strftime("%d-%m-%YT%H:%M:%SZ")
+            if x.phenomenontime_begin
+            else None,
+            x.result,
+            x.resulttime.strftime("%d-%m-%YT%H:%M:%SZ") if x.resulttime else None,
+        ]
 
     @classmethod
     def to_selected_json(cls, x, selectparams):
@@ -158,7 +174,7 @@ class Observations(db.Model):
     #     return result
 
     @classmethod
-    def get_nextlink_queryparams(cls, top, skip, expand_code):
+    def get_nextlink_queryparams(cls, top, skip, expand_code, resultformat):
         """
         returns nextLink used for paginating based on current parameters
         """
@@ -170,7 +186,9 @@ class Observations(db.Model):
         if skip >= 0:
             query_params.append(f"$skip={skip+100}")
 
-        print(expand_code)
+        if resultformat:
+            query_params.append(f"$resultformat={resultformat}")
+
         if expand_code > 0:
             expand_strings_list = []
             if expand_code == 1 or expand_code == 3:
@@ -188,12 +206,76 @@ class Observations(db.Model):
         return url_string
 
     @classmethod
-    def get_expanded_query(cls, base_query, top, skip, expand_code):
+    def get_filter_query(cls, base_query, filter_):
+        def get_updated_query(filter_expression, field, value):
+            if filter_expression == "eq":
+                query = base_query.filter(field == value)
+
+            if filter_expression == "ne":
+                query = base_query.filter(field != value)
+
+            if filter_expression == "gt":
+                query = base_query.filter(field > value)
+
+            if filter_expression == "ge":
+                query = base_query.filter(field >= value)
+
+            if filter_expression == "lt":
+                query = base_query.filter(field < value)
+
+            if filter_expression == "le":
+                query = base_query.filter(field <= value)
+
+            return query
+
+        splits = filter_.split()
+        filter_field = splits[0].lower()
+        filter_expression = splits[1]
+        filter_value = splits[2]
+
+        string_operators = ["eq", "ne"]
+
+        if filter_field == "result":
+            try:
+                value = float(filter_value)
+                query = get_updated_query(
+                    filter_expression, cast(Observations.result, Float), value
+                )
+            except Exception as e:
+                logging.warning(e)
+                value = filter_value
+                if filter_expression in string_operators:
+                    print("eq or ne")
+                    query = get_updated_query(
+                        filter_expression, Observations.result, value
+                    )
+                else:
+                    raise Exception(" invalid filter operation ")
+
+        elif filter_field == "resulttime":
+            try:
+                dt_obj = datetime.strptime(filter_value, "%d-%m-%YT%H:%M:%SZ")
+                query = get_updated_query(
+                    filter_expression, Observations.resulttime, dt_obj
+                )
+            except Exception as e:
+                logging.warning(e)
+                raise Exception(" value to filter is in dataformat error ")
+        else:
+            raise Exception(" unsupported filter field")
+        return query
+
+    @classmethod
+    def get_expanded_query(cls, base_query, top, skip, expand_code, orderby, filter_):
         """
         applies join query based on expand code.
         applies limit() and offset() with top and skip paremeters
         """
         query = None
+
+        if filter_:
+            base_query = Observations.get_filter_query(base_query, filter_)
+
         if expand_code >= 0:
             base_query = base_query.add_columns(
                 Observations.id,
@@ -226,9 +308,26 @@ class Observations(db.Model):
                     FeaturesofInterest.encodingtype.label("foi_encodingtype"),
                 )
 
-            query = base_query.order_by(Observations.resulttime.asc()).limit(top).offset(skip)
+            # query = (
+            #     base_query.order_by(Observations.resulttime.asc())
+            #     .limit(top)
+            #     .offset(skip)
+            # )
 
-        return query
+            orderbystrings = orderby.lower().split()
+            if orderbystrings[0] == "result":
+                if orderbystrings[1] == "asc":
+                    query = base_query.order_by(cast(Observations.result, Float).asc())
+                else:
+                    query = base_query.order_by(cast(Observations.result, Float).desc())
+
+            elif orderbystrings[0] == "resulttime":
+                if orderbystrings[1] == "asc":
+                    query = base_query.order_by(Observations.resulttime.asc())
+                else:
+                    query = base_query.order_by(Observations.resulttime.desc())
+
+        return query.limit(top).offset(skip)
 
     @classmethod
     def filter_by_id(cls, id, expand_code, selects):
@@ -241,6 +340,7 @@ class Observations(db.Model):
                 1,
                 0,
                 expand_code,
+                None,
             ).first()
 
             if result is None:
@@ -254,17 +354,43 @@ class Observations(db.Model):
         return result
 
     @classmethod
-    def filter_by_datastream_id(cls, id, top, skip, expand_code, selects):
+    def filter_by_datastream_id(
+        cls, id, top, skip, expand_code, selects, orderby, filter_, resultformat
+    ):
         """
         applies query to filter Observations by datastream id
         """
         count = Observations.query.filter(Observations.datastream_id == id).count()
         if count == 0:
-            obs_list = {"@iot.count": count}
+            obs_list = {"@iot.count": count}  ## TODO update count with filter
+        elif resultformat:
+            obs_list = {
+                "@iot.count": count,
+                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams({id})/Observations{Observations.get_nextlink_queryparams(top, skip, 0, resultformat)}",  # TODO
+                "components": [
+                    "@iot.id",
+                    "phenonmenontime_begin",
+                    "result",
+                    "resulttime",
+                ],
+                "dataArray": list(
+                    map(
+                        lambda x: Observations.to_dataarray(x),
+                        Observations.get_expanded_query(
+                            Observations.query.filter(Observations.datastream_id == id),
+                            top,
+                            skip,
+                            0,
+                            orderby,
+                            filter_,
+                        ).all(),
+                    )
+                ),
+            }
         elif expand_code != -1:
             obs_list = {
                 "@iot.count": count,
-                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams({id})/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code)}",
+                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Datastreams({id})/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code, None)}",
                 "value": list(
                     map(
                         lambda x: Observations.expand_to_selected_json(
@@ -275,6 +401,8 @@ class Observations(db.Model):
                             top,
                             skip,
                             expand_code,
+                            orderby,
+                            filter_,
                         ).all(),
                     )
                 ),
@@ -284,7 +412,9 @@ class Observations(db.Model):
         return obs_list
 
     @classmethod
-    def return_page_with_expand(cls, top, skip, expand_code, selects):
+    def return_page_with_expand(
+        cls, top, skip, expand_code, selects, orderby, filter_, resultformat
+    ):
         """
         applies query to join Observations table with Datastreams table of FeatureOfInterest table or both
         based on expand code
@@ -292,17 +422,36 @@ class Observations(db.Model):
         count = Observations.query.count()
         if count == 0:
             obs_list = {"@iot.count": count}
+        elif resultformat:
+            obs_list = {
+                "@iot.count": count,
+                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations{Observations.get_nextlink_queryparams(top, skip, 0, resultformat)}",  # TODO
+                "components": [
+                    "@iot.id",
+                    "phenonmenontime_begin",
+                    "result",
+                    "resulttime",
+                ],
+                "dataArray": list(
+                    map(
+                        lambda x: Observations.to_dataarray(x),
+                        Observations.get_expanded_query(
+                            Observations.query, top, skip, 0, orderby, filter_
+                        ).all(),
+                    )
+                ),
+            }
         elif expand_code != -1:
             obs_list = {
                 "@iot.count": count,
-                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code)}",
+                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Observations{Observations.get_nextlink_queryparams(top, skip, expand_code, None)}",
                 "value": list(
                     map(
                         lambda x: Observations.expand_to_selected_json(
                             x, expand_code, selects
                         ),
                         Observations.get_expanded_query(
-                            Observations.query, top, skip, expand_code
+                            Observations.query, top, skip, expand_code, orderby, filter_
                         ).all(),
                     )
                 ),

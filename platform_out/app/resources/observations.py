@@ -13,8 +13,19 @@ api = Api(observations_blueprint)
 
 def parse_args(query_parameters):
 
-    top, skip, expand, select = ArgParser.get_args()
-    print(top, skip, expand, select)
+    (
+        top,
+        skip,
+        expand,
+        select,
+        orderby,
+        count,
+        filter_,
+        resultformat,
+    ) = ArgParser.get_all_args()
+
+    print(top, skip, expand, select, orderby, count, filter_, resultformat)
+    param_error = None
 
     expand_type_list = []
     expand_code = 0
@@ -52,7 +63,53 @@ def parse_args(query_parameters):
     else:
         selects = None
 
-    return top, skip, expand_code, selects
+    if not orderby:
+        orderby = "resulttime asc"
+    allowed_orderby = ["result", "resulttime"]
+    allowed_orders = ["asc", "desc"]
+    orderbystrings = orderby.lower().split()
+    print(orderbystrings)
+    if len(orderbystrings) != 2:
+        param_error = {"message": "unrecognised order by"}
+    else:
+        if (
+            orderbystrings[0] not in allowed_orderby
+            or orderbystrings[1] not in allowed_orders
+        ):
+            param_error = {"message": "unrecognised order by"}
+
+    if resultformat:
+        if resultformat.lower() != "dataarray":
+            resultformat == None
+
+    allowed_filter_expressions = ["eq", "ne", "gt", "ge", "le", "lt"]
+    allowed_filter_fields = ["result", "resulttime"]
+    if filter_:
+        splits = filter_.lower().split()
+        if len(splits) != 3:
+            param_error = {"message": "unrecognised filter query"}
+        else:
+            filter_field = splits[0]
+            filter_expression = splits[1]
+            filter_value = splits[2]
+
+            if (
+                filter_field not in allowed_filter_fields
+                or filter_expression not in allowed_filter_expressions
+            ):
+                param_error = {"message": "unrecognised filter query"}
+
+    return (
+        top,
+        skip,
+        expand_code,
+        selects,
+        orderby,
+        count,
+        filter_,
+        resultformat,
+        param_error,
+    )
 
 
 class BaseResources(Resource):
@@ -106,7 +163,17 @@ class Observation(Resource):
         query observations by obervation id
         """
         try:
-            top, skip, expand_code, selects = parse_args(request.args)
+            (
+                top,
+                skip,
+                expand_code,
+                selects,
+                orderby,
+                count,
+                filter_,
+                resultformat,
+                param_error,
+            ) = parse_args(request.args)
             obs = Observations.filter_by_id(id, expand_code, selects)
             response = jsonify(obs)
             response.status_code = 200
@@ -130,12 +197,24 @@ class ObservationbyDSId(Resource):
         query observations by datastream id
         """
         try:
-            top, skip, expand_code, selects = parse_args(request.args)
-
-            obs = Observations.filter_by_datastream_id(
-                id, top, skip, expand_code, selects
-            )
-            response = jsonify(obs)
+            (
+                top,
+                skip,
+                expand_code,
+                selects,
+                orderby,
+                count,
+                filter_,
+                resultformat,
+                param_error,
+            ) = parse_args(request.args)
+            if param_error:
+                response = jsonify(param_error)
+            else:
+                obs = Observations.filter_by_datastream_id(
+                    id, top, skip, expand_code, selects, orderby, filter_, resultformat
+                )
+                response = jsonify(obs)
             response.status_code = 200
 
         except Exception as e:
@@ -156,11 +235,32 @@ class ObservationsList(Resource):
         query all obervations
         """
         try:
-            top, skip, expand_code, selects = parse_args(request.args)
-            obs_list = Observations.return_page_with_expand(
-                top, skip, expand_code, selects
-            )
-            response = jsonify(obs_list)
+            (
+                top,
+                skip,
+                expand_code,
+                selects,
+                orderby,
+                count,
+                filter_,
+                resultformat,
+                param_error,
+            ) = parse_args(request.args)
+            print(param_error)
+            if param_error:
+                response = jsonify(param_error)
+            else:
+                if filter_ and filter_.lower().split()[0] == "result":
+                    response = jsonify(
+                        {
+                            "message": "Error: Try filtering results with uniform dataformats, tip: Datastreams(x)/Observations "
+                        }
+                    )
+                else:
+                    obs_list = Observations.return_page_with_expand(
+                        top, skip, expand_code, selects, orderby, filter_, resultformat
+                    )
+                    response = jsonify(obs_list)
             response.status_code = 200
         except Exception as e:
             logging.warning(e)
@@ -170,6 +270,5 @@ class ObservationsList(Resource):
 
         finally:
             return response
-
 
 api.add_resource(ObservationsList, "/Observations")
