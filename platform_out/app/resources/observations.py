@@ -271,4 +271,5 @@ class ObservationsList(Resource):
         finally:
             return response
 
+
 api.add_resource(ObservationsList, "/Observations")
