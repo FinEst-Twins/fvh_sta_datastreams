@@ -9,7 +9,10 @@ import datetime
 from sqlalchemy import cast, Float
 from datetime import datetime
 
-logging.basicConfig(level=logging.INFO)
+from flask import current_app
+
+
+logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
 
 # TODO ?
 # class ExpandType(Enum):
@@ -57,8 +60,10 @@ class Observations(db.Model):
             if x.resulttime
             else None,
             "result": x.result,
-            "Datastream@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/Datastream",
-            "FeatureOfInterest@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/FeatureOfInterest",
+            "Datastream@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastreams({x.datastream_id})",
+            "FeatureOfInterest@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/FeaturesOfInterest({x.featureofinterest_id})"
+            if x.featureofinterest_id
+            else None
         }
 
     @classmethod
@@ -330,7 +335,7 @@ class Observations(db.Model):
         return query.limit(top).offset(skip)
 
     @classmethod
-    def filter_by_id(cls, id, expand_code, selects):
+    def filter_by_id(cls, id, expand_code, selects,orderby, filter_, resultformat):
         """
         applies query to filter Observations by Observation id
         """
@@ -340,7 +345,8 @@ class Observations(db.Model):
                 1,
                 0,
                 expand_code,
-                None,
+                orderby,
+                filter_
             ).first()
 
             if result is None:
@@ -350,7 +356,7 @@ class Observations(db.Model):
                     result, expand_code, selects
                 )
         else:
-            result = {"error": "unrecognized expand options"}
+            result = {"message": "unrecognized expand options"}
         return result
 
     @classmethod

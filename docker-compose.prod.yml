@@ -22,6 +22,7 @@ services:
       - FLASK_APP=app/__init__.py
       - FLASK_ENV=development
       - APP_SETTINGS=app.config.DevelopmentConfig
+      - LOG_LEVEL=3
 
   nginx:
     build: ./nginx

@@ -1,4 +1,4 @@
-from flask import jsonify, request, Blueprint
+from flask import jsonify, request, Blueprint, current_app
 from flask_restful import Resource, Api
 from app.models.datastreams import Datastreams
 import logging
@@ -199,6 +199,8 @@ class DatastreamsbyThingsId(Resource):
 
 
 api.add_resource(DatastreamsbyThingsId, "/Things(<int:id>)/Datastreams")
+
+
 
 
 class DSList(Resource):

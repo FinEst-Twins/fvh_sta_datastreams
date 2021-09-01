@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import logging
 import os
 
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
 
 db = SQLAlchemy()
 
@@ -18,25 +18,28 @@ def create_app(script_info=None):
     app_settings = os.getenv("APP_SETTINGS")
     app.config.from_object(app_settings)
 
+    logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(pathname)s %(funcName)s: %(message)s",level=app.config["LOG_LEVEL"])
+    #logging.getLogger().setLevel(app.config["LOG_LEVEL"])
+
     # set up extensions
     db.init_app(app)
 
     # register blueprints
+    with app.app_context():
+        from app.resources.datastreams import datastreams_blueprint
+        app.register_blueprint(datastreams_blueprint)
 
-    from app.resources.datastreams import datastreams_blueprint
-    app.register_blueprint(datastreams_blueprint)
+        from app.resources.foi import foi_blueprint
+        app.register_blueprint(foi_blueprint)
 
-    from app.resources.foi import foi_blueprint
-    app.register_blueprint(foi_blueprint)
+        from app.resources.observations import observations_blueprint
+        app.register_blueprint(observations_blueprint)
 
-    from app.resources.observations import observations_blueprint
-    app.register_blueprint(observations_blueprint)
+        from app.resources.things import things_blueprint
+        app.register_blueprint(things_blueprint)
 
-    from app.resources.things import things_blueprint
-    app.register_blueprint(things_blueprint)
-
-    from app.resources.sensors import sensors_blueprint
-    app.register_blueprint(sensors_blueprint)
+        from app.resources.sensors import sensors_blueprint
+        app.register_blueprint(sensors_blueprint)
 
     # shell context for flask cli
     @app.shell_context_processor

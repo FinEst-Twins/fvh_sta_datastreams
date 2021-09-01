@@ -1,11 +1,13 @@
-from flask import jsonify, Blueprint, request
+from flask import jsonify, Blueprint, request, current_app
 from flask_restful import Resource, Api
 from app.models.observations import Observations
 import logging
 from app.resources.parser import ArgParser
 from flask import current_app
 
-logging.basicConfig(level=logging.INFO)
+
+logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
+#logging.getLogger().setLevel(current_app.config["LOG_LEVEL"])
 
 observations_blueprint = Blueprint("observations", __name__)
 api = Api(observations_blueprint)
@@ -24,7 +26,7 @@ def parse_args(query_parameters):
         resultformat,
     ) = ArgParser.get_all_args()
 
-    print(top, skip, expand, select, orderby, count, filter_, resultformat)
+    logging.debug(f" top={top}, skip={skip}, expand={expand}, select={select}, orderby={orderby}, count={count}, filter={filter_}, resultformat={resultformat} ")
     param_error = None
 
     expand_type_list = []
@@ -68,7 +70,7 @@ def parse_args(query_parameters):
     allowed_orderby = ["result", "resulttime"]
     allowed_orders = ["asc", "desc"]
     orderbystrings = orderby.lower().split()
-    print(orderbystrings)
+    logging.debug(orderbystrings)
     if len(orderbystrings) != 2:
         param_error = {"message": "unrecognised order by"}
     else:
@@ -114,6 +116,7 @@ def parse_args(query_parameters):
 
 class BaseResources(Resource):
     def get(self):
+        logging.info("Get Base URLS")
         base_urls = {
             "value": [
                 {
@@ -174,7 +177,7 @@ class Observation(Resource):
                 resultformat,
                 param_error,
             ) = parse_args(request.args)
-            obs = Observations.filter_by_id(id, expand_code, selects)
+            obs = Observations.filter_by_id(id, expand_code, selects, orderby, filter_, resultformat)
             response = jsonify(obs)
             response.status_code = 200
 
@@ -246,7 +249,7 @@ class ObservationsList(Resource):
                 resultformat,
                 param_error,
             ) = parse_args(request.args)
-            print(param_error)
+            logging.debug(f"param error = {param_error}")
             if param_error:
                 response = jsonify(param_error)
             else:
@@ -261,6 +264,8 @@ class ObservationsList(Resource):
                         top, skip, expand_code, selects, orderby, filter_, resultformat
                     )
                     response = jsonify(obs_list)
+                    if "message" in obs_list.keys():
+                        response.status_code = 204
             response.status_code = 200
         except Exception as e:
             logging.warning(e)

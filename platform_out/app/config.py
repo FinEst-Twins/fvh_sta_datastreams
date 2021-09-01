@@ -1,4 +1,5 @@
 import os
+import logging
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
@@ -19,6 +20,13 @@ class Config(object):
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = True
     HOSTED_URL = get_env_variable("BASE_URL")
+
+    ll = get_env_variable("LOG_LEVEL")
+    try:
+
+        LOG_LEVEL = {0: logging.ERROR, 1: logging.WARN, 2: logging.INFO}[int(ll)]
+    except KeyError:
+        LOG_LEVEL = logging.DEBUG
 
 
 class ProductionConfig(Config):
