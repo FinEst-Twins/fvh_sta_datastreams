@@ -1,10 +1,13 @@
-from flask import jsonify, request, Blueprint,current_app
+from flask import jsonify, request, Blueprint, current_app
 from flask_restful import Resource, Api
 from app.models.things import Things
 import logging
 from app.resources.parser import ArgParser
 
-logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
+logging.basicConfig(
+    format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",
+    level=current_app.config["LOG_LEVEL"],
+)
 
 things_blueprint = Blueprint("thing", __name__)
 api = Api(things_blueprint)
@@ -27,12 +30,7 @@ def parse_args(query_parameters):
         expand_code = -1
 
     selects = set()
-    allowed_selects = set(
-        [
-            "name",
-            "description"
-        ]
-    )
+    allowed_selects = set(["name", "description"])
 
     if select:
         selects = set(select.lower().split(","))
@@ -113,9 +111,7 @@ class ThingList(Resource):
         """
         try:
             top, skip, expand_code, selects = parse_args(request.args)
-            thing_list = Things.return_page_with_expand(
-                top, skip, expand_code, selects
-            )
+            thing_list = Things.return_page_with_expand(top, skip, expand_code, selects)
             response = jsonify(thing_list)
             response.status_code = 200
         except Exception as e:
@@ -126,14 +122,13 @@ class ThingList(Resource):
         finally:
             return response
 
-
     def post(self):
         """
         post new sensor
         """
         try:
             data = request.get_json() or {}
-            if 'name' not in data.keys() and 'description' not in data.keys() :
+            if "name" not in data.keys() and "description" not in data.keys():
                 result = {"message": "error - must include name or description fields"}
                 response = jsonify(result)
                 response.status_code = 200

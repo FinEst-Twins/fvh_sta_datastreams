@@ -4,7 +4,10 @@ from app.models.datastreams import Datastreams
 import logging
 from app.resources.parser import ArgParser
 
-logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
+logging.basicConfig(
+    format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",
+    level=current_app.config["LOG_LEVEL"],
+)
 
 datastreams_blueprint = Blueprint("datastream", __name__)
 api = Api(datastreams_blueprint)
@@ -60,7 +63,7 @@ class DataStream(Resource):
         """
         try:
             query_parameters = request.args
-            logging.debug(f"{query_parameters}")
+            logging.debug(f" query params - {query_parameters}")
             if query_parameters:
                 thing = None
                 sensor = None
@@ -103,7 +106,9 @@ class DSbyID(Resource):
         query data streams by Datastream Id
         """
         try:
-            top, skip, expand_code, selects = parse_args(request.args)
+            query_parameters = request.args
+            logging.debug(f" query params - {query_parameters}")
+            top, skip, expand_code, selects = parse_args(query_parameters)
             datastream_entity = Datastreams.filter_by_id(ds_id, expand_code, selects)
             response = jsonify(datastream_entity)
             response.status_code = 200
@@ -120,6 +125,7 @@ class DSbyID(Resource):
         """
         try:
             data = request.get_json() or {}
+            logging.debug(f"patching with - {data}")
 
             if (
                 "unitofmeasurement" not in data.keys()
@@ -158,7 +164,7 @@ class DSbyID(Resource):
         delete  datastreams
         """
         try:
-
+            logging.debug(f"delete - {ds_id}")
             result = Datastreams.delete_item(ds_id)
             response = jsonify(result)
             response.status_code = 200
@@ -181,7 +187,9 @@ class DatastreamsbyThingsId(Resource):
         query observations by datastream id
         """
         try:
-            top, skip, expand_code, selects = parse_args(request.args)
+            query_parameters = request.args
+            logging.debug(f" query params - {query_parameters}")
+            top, skip, expand_code, selects = parse_args(query_parameters)
 
             ds_list = Datastreams.filter_by_thing_id(
                 id, top, skip, expand_code, selects
@@ -201,8 +209,6 @@ class DatastreamsbyThingsId(Resource):
 api.add_resource(DatastreamsbyThingsId, "/Things(<int:id>)/Datastreams")
 
 
-
-
 class DSList(Resource):
     def get(self):
         """
@@ -210,7 +216,9 @@ class DSList(Resource):
         #TODO pagination
         """
         try:
-            top, skip, expand_code, selects = parse_args(request.args)
+            query_parameters = request.args
+            logging.debug(f" query params - {query_parameters}")
+            top, skip, expand_code, selects = parse_args(query_parameters)
             ds_list = Datastreams.return_page_with_expand(
                 top, skip, expand_code, selects
             )
@@ -230,6 +238,7 @@ class DSList(Resource):
         """
         try:
             data = request.get_json() or {}
+            logging.debug(f"posting with - {data}")
 
             if (
                 "unitofmeasurement" not in data.keys()

@@ -9,10 +9,10 @@ import datetime
 from sqlalchemy import cast, Float
 from datetime import datetime
 
-from flask import current_app
-
-
-logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
+logging.basicConfig(
+    format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",
+    level=current_app.config["LOG_LEVEL"],
+)
 
 # TODO ?
 # class ExpandType(Enum):
@@ -63,7 +63,7 @@ class Observations(db.Model):
             "Datastream@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastreams({x.datastream_id})",
             "FeatureOfInterest@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/FeaturesOfInterest({x.featureofinterest_id})"
             if x.featureofinterest_id
-            else None
+            else None,
         }
 
     @classmethod
@@ -212,6 +212,9 @@ class Observations(db.Model):
 
     @classmethod
     def get_filter_query(cls, base_query, filter_):
+        """
+        filtering works with resulttime or result only
+        """
         def get_updated_query(filter_expression, field, value):
             if filter_expression == "eq":
                 query = base_query.filter(field == value)
@@ -335,7 +338,7 @@ class Observations(db.Model):
         return query.limit(top).offset(skip)
 
     @classmethod
-    def filter_by_id(cls, id, expand_code, selects,orderby, filter_, resultformat):
+    def filter_by_id(cls, id, expand_code, selects, orderby, filter_, resultformat):
         """
         applies query to filter Observations by Observation id
         """
@@ -346,7 +349,7 @@ class Observations(db.Model):
                 0,
                 expand_code,
                 orderby,
-                filter_
+                filter_,
             ).first()
 
             if result is None:

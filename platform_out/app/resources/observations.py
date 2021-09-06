@@ -3,11 +3,12 @@ from flask_restful import Resource, Api
 from app.models.observations import Observations
 import logging
 from app.resources.parser import ArgParser
-from flask import current_app
 
+logging.basicConfig(
+    format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",
+    level=current_app.config["LOG_LEVEL"],
+)
 
-logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
-#logging.getLogger().setLevel(current_app.config["LOG_LEVEL"])
 
 observations_blueprint = Blueprint("observations", __name__)
 api = Api(observations_blueprint)
@@ -26,7 +27,9 @@ def parse_args(query_parameters):
         resultformat,
     ) = ArgParser.get_all_args()
 
-    logging.debug(f" top={top}, skip={skip}, expand={expand}, select={select}, orderby={orderby}, count={count}, filter={filter_}, resultformat={resultformat} ")
+    logging.debug(
+        f" top={top}, skip={skip}, expand={expand}, select={select}, orderby={orderby}, count={count}, filter={filter_}, resultformat={resultformat} "
+    )
     param_error = None
 
     expand_type_list = []
@@ -166,6 +169,8 @@ class Observation(Resource):
         query observations by obervation id
         """
         try:
+            query_parameters = request.args
+            logging.debug(f"{query_parameters}")
             (
                 top,
                 skip,
@@ -177,7 +182,9 @@ class Observation(Resource):
                 resultformat,
                 param_error,
             ) = parse_args(request.args)
-            obs = Observations.filter_by_id(id, expand_code, selects, orderby, filter_, resultformat)
+            obs = Observations.filter_by_id(
+                id, expand_code, selects, orderby, filter_, resultformat
+            )
             response = jsonify(obs)
             response.status_code = 200
 
@@ -200,6 +207,8 @@ class ObservationbyDSId(Resource):
         query observations by datastream id
         """
         try:
+            query_parameters = request.args
+            logging.debug(f"{query_parameters}")
             (
                 top,
                 skip,
@@ -238,6 +247,8 @@ class ObservationsList(Resource):
         query all obervations
         """
         try:
+            query_parameters = request.args
+            logging.debug(f"{query_parameters}")
             (
                 top,
                 skip,
@@ -248,7 +259,7 @@ class ObservationsList(Resource):
                 filter_,
                 resultformat,
                 param_error,
-            ) = parse_args(request.args)
+            ) = parse_args(query_parameters)
             logging.debug(f"param error = {param_error}")
             if param_error:
                 response = jsonify(param_error)

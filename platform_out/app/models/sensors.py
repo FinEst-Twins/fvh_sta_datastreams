@@ -2,7 +2,12 @@ from app import db
 from flask import current_app
 import logging
 
-logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
+logging.basicConfig(
+    format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",
+    level=current_app.config["LOG_LEVEL"],
+)
+
+
 class Sensors(db.Model):
     __tablename__ = "sensor"
     id = db.Column(db.Integer, primary_key=True)
@@ -42,15 +47,12 @@ class Sensors(db.Model):
         if id:
             sensor_list = Sensors.query.filter(Sensors.id == id)
 
-
         if sensor_list.count() == 0:
-            result = {"message":"No Sensors found with given Id"}
+            result = {"message": "No Sensors found with given Id"}
         else:
             result = Sensors.to_selected_json(sensor_list[0], selects)
 
         return result
-
-
 
     @classmethod
     def return_page_with_expand(cls, top, skip, expand_code, selects):
@@ -83,7 +85,7 @@ class Sensors(db.Model):
         sensor = Sensors(name=name, description=description)
         db.session.add(sensor)
         db.session.commit()
-        return {"created id" : sensor.id}
+        return {"created id": sensor.id}
 
     @classmethod
     def update_item(cls, id, name, description):
