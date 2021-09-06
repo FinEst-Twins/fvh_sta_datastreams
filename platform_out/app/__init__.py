@@ -3,10 +3,16 @@ from flask_sqlalchemy import SQLAlchemy
 import logging
 import os
 
-#logging.basicConfig(level=logging.INFO)
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+if os.getenv("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=os.getenv("SENTRY_DSN"),
+        integrations=[FlaskIntegration()]
+    )
 
 db = SQLAlchemy()
-
 
 
 def create_app(script_info=None):
@@ -49,6 +55,10 @@ def create_app(script_info=None):
     @app.route("/")
     def hello_world():
         return jsonify(health="ok")
+
+    @app.route('/debug-sentry')
+    def trigger_error():
+        division_by_zero = 1 / 0
 
     return app
 

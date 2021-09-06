@@ -1,10 +1,10 @@
-from flask import jsonify, Blueprint, request
+from flask import jsonify, Blueprint, request, current_app
 from flask_restful import Resource, Api
 from app.models.foi import FeaturesofInterest
 import logging
 import json
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
 
 foi_blueprint = Blueprint("featuresofinterest", __name__)
 api = Api(foi_blueprint)

@@ -4,7 +4,7 @@ import json
 from flask import current_app
 import logging
 
-
+logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
 class FeaturesofInterest(db.Model):
     __tablename__ = "featureofinterest"
     id = db.Column(db.Integer, primary_key=True)

@@ -2,8 +2,7 @@ from app import db
 from flask import current_app
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
-
+logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
 class Sensors(db.Model):
     __tablename__ = "sensor"
     id = db.Column(db.Integer, primary_key=True)

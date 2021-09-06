@@ -4,7 +4,7 @@ from app.models.datastreams import Datastreams
 import logging
 from app.resources.parser import ArgParser
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
 
 datastreams_blueprint = Blueprint("datastream", __name__)
 api = Api(datastreams_blueprint)
@@ -60,7 +60,7 @@ class DataStream(Resource):
         """
         try:
             query_parameters = request.args
-            # print(query_parameters)
+            logging.debug(f"{query_parameters}")
             if query_parameters:
                 thing = None
                 sensor = None
@@ -68,7 +68,7 @@ class DataStream(Resource):
                     thing = request.args["thing"]
                 if "sensor" in query_parameters:
                     sensor = request.args["sensor"]
-                # print(thing, sensor)
+                logging.debug(f"thing={thing},sensor={sensor}")
                 datastreams = Datastreams.filter_by_thing_sensor(thing, sensor)
             else:
                 result = {"message": "no known query parameters"}

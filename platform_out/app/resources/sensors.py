@@ -1,10 +1,10 @@
-from flask import jsonify, request, Blueprint
+from flask import jsonify, request, Blueprint, current_app
 from flask_restful import Resource, Api
 from app.models.sensors import Sensors
 import logging
 from app.resources.parser import ArgParser
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
 
 sensors_blueprint = Blueprint("Sensor", __name__)
 api = Api(sensors_blueprint)

@@ -5,7 +5,7 @@ from app.models.things import Things
 from app.models.sensors import Sensors
 import logging
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",level=current_app.config["LOG_LEVEL"])
 
 
 class Datastreams(db.Model):
