@@ -38,8 +38,8 @@ class Datastreams(db.Model):
             "name": x.name,
             "description": x.description,
             "unitOfMeasurement": x.unitofmeasurement,
-            "Sensor@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastream({x.id})/Sensor",
-            "Thing@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastream({x.id})/Thing",
+            "Sensor@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Sensors({x.sensor_id})",
+            "Thing@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Things({x.thing_id})",
         }
 
     @classmethod
@@ -89,7 +89,7 @@ class Datastreams(db.Model):
         if x.sensor_id:
             data_dict["Sensor"] = {
                 "@iot.id": x.sensor_id,
-                "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Sensor({x.sensor_id})",
+                "@iot.selfLink": f"{current_app.config['HOSTED_URL']}/Sensors({x.sensor_id})",
                 "name": x.sensorname,
                 "description": x.sensordesc,
             }
@@ -182,6 +182,9 @@ class Datastreams(db.Model):
 
             query = base_query.limit(top).offset(skip)
 
+
+        #logging.debug(str(query))
+
         return query
 
     @classmethod
@@ -265,6 +268,7 @@ class Datastreams(db.Model):
         applies query to join Datastreams table with things table or sensor table or both
         based on expand code
         """
+        logging.debug(f"top={top}, skip={skip}, expand={expand_code}, selects={selects}")
         count = Datastreams.query.count()
         if count == 0:
             ds_list = {"@iot.count": count}
