@@ -237,8 +237,10 @@ class Datastreams(db.Model):
         """
         applies query to filter Observations by datastream id
         """
+        logging.debug("func called")
         count = Datastreams.query.filter(Datastreams.thing_id == id).count()
         if count == 0:
+            logging.debug("No daatstreams found for given thing id")
             obs_list = {"@iot.count": count}
         elif expand_code != -1:
             obs_list = {
@@ -251,6 +253,39 @@ class Datastreams(db.Model):
                         ),
                         Datastreams.get_expanded_query(
                             Datastreams.query.filter(Datastreams.thing_id == id),
+                            top,
+                            skip,
+                            expand_code,
+                        ).all(),
+                    )
+                ),
+            }
+        else:
+            obs_list = {"error": "unrecognized expand options"}
+        return obs_list
+
+
+    @classmethod
+    def filter_by_sensor_id(cls, id, top, skip, expand_code, selects):
+        """
+        applies query to filter Observations by datastream id
+        """
+        logging.debug("func called")
+        count = Datastreams.query.filter(Datastreams.sensor_id == id).count()
+        if count == 0:
+            logging.debug("No daatstreams found for given sensor id")
+            obs_list = {"@iot.count": count}
+        elif expand_code != -1:
+            obs_list = {
+                "@iot.count": count,
+                "@iot.nextLink": f"{current_app.config['HOSTED_URL']}/Sensors({id})/Datastreams{Datastreams.get_nextlink_queryparams(top, skip, expand_code)}",
+                "value": list(
+                    map(
+                        lambda x: Datastreams.expand_to_selected_json(
+                            x, expand_code, selects
+                        ),
+                        Datastreams.get_expanded_query(
+                            Datastreams.query.filter(Datastreams.sensor_id == id),
                             top,
                             skip,
                             expand_code,
@@ -294,6 +329,7 @@ class Datastreams(db.Model):
 
     @classmethod
     def add_item(cls, name, description, unitofmeasurement, thing_id, sensor_id):
+        logging.debug("func called")
 
         ds = Datastreams(
             name=name,
@@ -308,6 +344,7 @@ class Datastreams(db.Model):
 
     @classmethod
     def update_item(cls, id, name, description, unitofmeasurement, thing_id, sensor_id):
+        logging.debug("func called")
         try:
             ds = Datastreams.query.filter(Datastreams.id == id).first()
             if ds:
@@ -328,6 +365,7 @@ class Datastreams(db.Model):
 
     @classmethod
     def delete_item(cls, id):
+        logging.debug("func called")
         try:
             ds = Datastreams.query.filter(Datastreams.id == id).first()
             if ds:

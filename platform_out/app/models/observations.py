@@ -60,8 +60,8 @@ class Observations(db.Model):
             if x.resulttime
             else None,
             "result": x.result,
-            "Datastream@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastreams({x.datastream_id})",
-            "FeatureOfInterest@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/FeaturesOfInterest({x.featureofinterest_id})"
+            "Datastream@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/Datastreams",
+            "FeatureOfInterest@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Observations({x.id})/FeatureOfInterest"
             if x.featureofinterest_id
             else None,
         }
@@ -215,6 +215,7 @@ class Observations(db.Model):
         """
         filtering works with resulttime or result only
         """
+
         def get_updated_query(filter_expression, field, value):
             if filter_expression == "eq":
                 query = base_query.filter(field == value)
@@ -281,6 +282,8 @@ class Observations(db.Model):
         """
         query = None
 
+        logging.debug("func called")
+
         if filter_:
             base_query = Observations.get_filter_query(base_query, filter_)
 
@@ -321,28 +324,38 @@ class Observations(db.Model):
             #     .limit(top)
             #     .offset(skip)
             # )
+            if orderby:
+                orderbystrings = orderby.lower().split()
+                if orderbystrings[0] == "result":
+                    if orderbystrings[1] == "asc":
+                        base_query = base_query.order_by(
+                            cast(Observations.result, Float).asc()
+                        )
+                    else:
+                        base_query = base_query.order_by(
+                            cast(Observations.result, Float).desc()
+                        )
 
-            orderbystrings = orderby.lower().split()
-            if orderbystrings[0] == "result":
-                if orderbystrings[1] == "asc":
-                    query = base_query.order_by(cast(Observations.result, Float).asc())
-                else:
-                    query = base_query.order_by(cast(Observations.result, Float).desc())
+                elif orderbystrings[0] == "resulttime":
+                    if orderbystrings[1] == "asc":
+                        base_query = base_query.order_by(Observations.resulttime.asc())
+                    else:
+                        base_query = base_query.order_by(Observations.resulttime.desc())
 
-            elif orderbystrings[0] == "resulttime":
-                if orderbystrings[1] == "asc":
-                    query = base_query.order_by(Observations.resulttime.asc())
-                else:
-                    query = base_query.order_by(Observations.resulttime.desc())
+        logging.debug(str(base_query))
 
-        return query.limit(top).offset(skip)
+        return base_query.limit(top).offset(skip)
 
     @classmethod
     def filter_by_id(cls, id, expand_code, selects, orderby, filter_, resultformat):
         """
         applies query to filter Observations by Observation id
         """
+        logging.debug(
+            f"id={id}, expand_code={expand_code}, selects={selects}, orderby={orderby}, filter_={filter_}, resultformat={resultformat}"
+        )
         if expand_code != -1:
+            logging.debug("querying obs")
             result = Observations.get_expanded_query(
                 Observations.query.filter(Observations.id == id),
                 1,
@@ -352,6 +365,7 @@ class Observations(db.Model):
                 filter_,
             ).first()
 
+            logging.debug(str(result))
             if result is None:
                 result = {"message": "No Observations with given Id found"}
             else:
@@ -360,6 +374,8 @@ class Observations(db.Model):
                 )
         else:
             result = {"message": "unrecognized expand options"}
+
+        logging.debug(str(result))
         return result
 
     @classmethod
@@ -469,3 +485,14 @@ class Observations(db.Model):
             obs_list = {"error": "unrecognized expand options"}
 
         return obs_list
+
+    @classmethod
+    def find_observation_by_observation_id(cls, id):
+        """
+        applies query to filter Observations by Observation id
+        """
+
+        result = Observations.query.filter(Observations.id == id).first()
+
+        return result
+

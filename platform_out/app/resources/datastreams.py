@@ -1,6 +1,7 @@
 from flask import jsonify, request, Blueprint, current_app
 from flask_restful import Resource, Api
 from app.models.datastreams import Datastreams
+from app.models.observations import Observations
 import logging
 from app.resources.parser import ArgParser
 
@@ -52,6 +53,10 @@ def parse_args(query_parameters):
             raise Exception("Unrecognized select options")
     else:
         selects = None
+
+    logging.debug(
+        f"parseg args top, skip, expand_code, selects - {top}, {skip}, {expand_code}, {selects}"
+    )
 
     return top, skip, expand_code, selects
 
@@ -184,7 +189,7 @@ api.add_resource(DSbyID, "/Datastreams(<int:ds_id>)")
 class DatastreamsbyThingsId(Resource):
     def get(self, id):
         """
-        query observations by datastream id
+        query observations by thing id
         """
         try:
             query_parameters = request.args
@@ -207,6 +212,67 @@ class DatastreamsbyThingsId(Resource):
 
 
 api.add_resource(DatastreamsbyThingsId, "/Things(<int:id>)/Datastreams")
+
+
+class DatastreamsbySensorsId(Resource):
+    def get(self, id):
+        """
+        query datastream by sensor id
+        """
+        try:
+            query_parameters = request.args
+            logging.debug(f" query params - {query_parameters}")
+            top, skip, expand_code, selects = parse_args(query_parameters)
+
+            ds_list = Datastreams.filter_by_sensor_id(
+                id, top, skip, expand_code, selects
+            )
+            response = jsonify(ds_list)
+            response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            response = jsonify({"message": "error"})
+            response.status_code = 400
+            return response
+
+        finally:
+            return response
+
+
+api.add_resource(DatastreamsbySensorsId, "/Sensors(<int:id>)/Datastreams")
+
+
+class DatastreamsbyObservationId(Resource):
+    def get(self, id):
+        """
+        query datastream by observation id
+        """
+        try:
+            query_parameters = request.args
+            logging.debug(f" query params - {str(query_parameters)}")
+            obs = Observations.find_observation_by_observation_id(id)
+
+            top, skip, expand_code, selects = parse_args(query_parameters)
+            if obs:
+                ds_list = Datastreams.filter_by_id(
+                    obs.datastream_id, expand_code, selects
+                )
+                response = jsonify(ds_list)
+
+            else:
+                response = jsonify({"message": "No Observations with given Id found"})
+            response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            response = jsonify({"message": "error"})
+            response.status_code = 400
+            return response
+
+        finally:
+            return response
+
+
+api.add_resource(DatastreamsbyObservationId, "/Observations(<int:id>)/Datastreams")
 
 
 class DSList(Resource):

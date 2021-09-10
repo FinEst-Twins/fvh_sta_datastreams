@@ -3,6 +3,7 @@ from flask_restful import Resource, Api
 from app.models.foi import FeaturesofInterest
 import logging
 import json
+from app.models.observations import Observations
 
 logging.basicConfig(
     format="%(asctime)-15s [%(levelname)s] %(funcName)s: %(message)s",
@@ -94,7 +95,7 @@ class FoI(Resource):
             return response
 
 
-api.add_resource(FoI, "//FeaturesOfInterest(<int:foi_id>)")
+api.add_resource(FoI, "/FeaturesOfInterest(<int:foi_id>)")
 
 
 class FoIList(Resource):
@@ -160,3 +161,32 @@ class FoIList(Resource):
 
 
 api.add_resource(FoIList, "/FeaturesOfInterest")
+
+
+class FoIbyObservationId(Resource):
+    def get(self, id):
+        """
+        query foi by observation id
+        """
+        try:
+
+            obs = Observations.find_observation_by_observation_id(id)
+
+            if obs:
+                foi = FeaturesofInterest.filter_by_id(obs.featureofinterest_id)
+                response = jsonify(foi)
+
+            else:
+                response = jsonify({"message": "No Observations with given Id found"})
+            response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            response = jsonify({"message": "error"})
+            response.status_code = 400
+            return response
+
+        finally:
+            return response
+
+
+api.add_resource(FoIbyObservationId, "/Observations(<int:id>)/FeatureOfInterest")
