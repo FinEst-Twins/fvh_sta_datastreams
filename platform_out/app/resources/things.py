@@ -1,6 +1,7 @@
 from flask import jsonify, request, Blueprint, current_app
 from flask_restful import Resource, Api
 from app.models.things import Things
+from app.models.datastreams import Datastreams
 import logging
 from app.resources.parser import ArgParser
 
@@ -146,3 +147,35 @@ class ThingList(Resource):
 
 
 api.add_resource(ThingList, "/Things")
+
+class ThingByDatastreamId(Resource):
+    def get(self, id):
+        """
+        query thing by datastream id
+        """
+        try:
+            query_parameters = request.args
+            logging.debug(f" query params - {str(query_parameters)}")
+            obs = Datastreams.find_datastream_by_datastream_id(id)
+
+            top, skip, expand_code, selects = parse_args(query_parameters)
+            if obs:
+                thing = Things.filter_by_id(
+                    obs.thing_id, expand_code, selects
+                )
+                response = jsonify(thing)
+
+            else:
+                response = jsonify({"message": "No datastreams with given Id found"})
+            response.status_code = 200
+        except Exception as e:
+            logging.warning(e)
+            response = jsonify({"message": "error"})
+            response.status_code = 400
+            return response
+
+        finally:
+            return response
+
+
+api.add_resource(ThingByDatastreamId, "/Datastreams(<int:id>)/Things")

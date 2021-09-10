@@ -495,4 +495,3 @@ class Observations(db.Model):
         result = Observations.query.filter(Observations.id == id).first()
 
         return result
-

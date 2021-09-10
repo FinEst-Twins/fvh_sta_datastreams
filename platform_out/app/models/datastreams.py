@@ -38,8 +38,8 @@ class Datastreams(db.Model):
             "name": x.name,
             "description": x.description,
             "unitOfMeasurement": x.unitofmeasurement,
-            "Sensor@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Sensors({x.sensor_id})",
-            "Thing@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Things({x.thing_id})",
+            "Sensor@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastreams({x.id})/Sensors",
+            "Thing@iot.navigationLink": f"{current_app.config['HOSTED_URL']}/Datastreams({x.id})/Things",
         }
 
     @classmethod
@@ -182,8 +182,7 @@ class Datastreams(db.Model):
 
             query = base_query.limit(top).offset(skip)
 
-
-        #logging.debug(str(query))
+        # logging.debug(str(query))
 
         return query
 
@@ -264,7 +263,6 @@ class Datastreams(db.Model):
             obs_list = {"error": "unrecognized expand options"}
         return obs_list
 
-
     @classmethod
     def filter_by_sensor_id(cls, id, top, skip, expand_code, selects):
         """
@@ -303,7 +301,9 @@ class Datastreams(db.Model):
         applies query to join Datastreams table with things table or sensor table or both
         based on expand code
         """
-        logging.debug(f"top={top}, skip={skip}, expand={expand_code}, selects={selects}")
+        logging.debug(
+            f"top={top}, skip={skip}, expand={expand_code}, selects={selects}"
+        )
         count = Datastreams.query.count()
         if count == 0:
             ds_list = {"@iot.count": count}
@@ -379,3 +379,13 @@ class Datastreams(db.Model):
             resp = {"message": "error in delete"}
 
         return resp
+
+    @classmethod
+    def find_datastream_by_datastream_id(cls, id):
+        """
+        applies query to filter Observations by Observation id
+        """
+
+        result = Datastreams.query.filter(Datastreams.id == id).first()
+
+        return result
