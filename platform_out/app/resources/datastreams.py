@@ -40,8 +40,7 @@ def parse_args(query_parameters):
             "description",
             "unitofmeasurement",
             "thing",
-            "sensor",
-            "observation",
+            "sensor"
         ]
     )
 
