@@ -9,3 +9,4 @@ regex
 requests
 SQLAlchemy
 sentry-sdk[flask]
+elastic-apm

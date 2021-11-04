@@ -28,6 +28,13 @@ class Config(object):
     except KeyError:
         LOG_LEVEL = logging.DEBUG
 
+    ELASTIC_APM = {
+        "SERVICE_NAME": get_env_variable("ELASTIC_SERVICE_NAME"),
+        "SECRET_TOKEN": get_env_variable("ELASTIC_SECRET_TOKEN"),
+        "SERVER_URL": get_env_variable("ELASTIC_SERVER_URL"),
+        "DEBUG": False,
+    }
+
 
 class ProductionConfig(Config):
     DEBUG = False
