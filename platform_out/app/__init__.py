@@ -30,7 +30,8 @@ def create_app(script_info=None):
 
     # set up extensions
     db.init_app(app)
-    elastic_apm.init_app(app)
+    if os.getenv("USE_ELASTIC"):
+        elastic_apm.init_app(app)
 
     # register blueprints
     with app.app_context():
