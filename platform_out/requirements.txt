@@ -10,3 +10,4 @@ requests
 SQLAlchemy
 sentry-sdk[flask]
 elastic-apm
+itsdangerous==2.0.1
